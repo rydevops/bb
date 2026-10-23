@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Baldi's Basics 3D</title>
+<meta name="theme-color" content="#1c3d2a">
+<meta name="description" content="A 3D fan-made clone of Baldi's Basics Classic Remastered. Collect 7 notebooks and escape.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="nbCount">Notebooks <b>0/7</b></div>
+  <div id="staWrap"><div id="staBar"></div></div>
+  <div id="slots"></div>
+  <div id="crosshair"></div>
+  <div id="prompt"></div>
+  <div id="subtitle"></div>
+  <div id="flash"></div>
+  <canvas id="minimap" width="248" height="200" class="hidden"></canvas>
+  <div id="hudBtns">
+    <button id="btnMap" aria-label="Map">🗺</button>
+    <button id="btnPause" aria-label="Pause">❚❚</button>
+  </div>
+</div>
+
+<div id="touch" class="hidden">
+  <div id="stick"><div id="knob"></div></div>
+  <button id="tRun">RUN</button>
+  <button id="tAct">USE</button>
+  <button id="tItem">ITEM</button>
+</div>
+
+<div id="math" class="hidden">
+  <div class="board">
+    <div class="mathHead"><span id="mathTitle">NOTEBOOK</span><span id="mathProg"></span></div>
+    <div id="mathQ">1 + 1 =</div>
+    <div id="mathA">&nbsp;</div>
+    <div id="mathMsg">&nbsp;</div>
+    <div id="keypad"></div>
+  </div>
+</div>
+
+<div id="play" class="hidden">
+  <div class="board">
+    <div class="mathHead"><span>PLAYTIME</span><span id="playProg">0/5</span></div>
+    <div id="playMsg">Jump when the rope reaches the green!</div>
+    <div id="ropeBar"><div id="ropeZone"></div><div id="ropeMark"></div></div>
+    <button id="jumpBtn">JUMP!</button>
+  </div>
+</div>
+
+<div id="scare" class="hidden"><canvas id="scareCv" width="512" height="768"></canvas></div>
+
+<div id="title" class="screen">
+  <div class="card">
+    <h1>BALDI'S BASICS<small>3D · Classic Remastered clone</small></h1>
+    <p class="lead">Collect all <b>7 notebooks</b>, solve the math, and <b>escape the schoolhouse</b>.<br>Every wrong answer makes Baldi angrier. Don't run in the halls near the Principal!</p>
+    <div class="btnrow">
+      <button id="startBtn" class="big">PLAY</button>
+    </div>
+    <div class="btnrow small">
+      <button id="helpBtn">How to play</button>
+      <button id="soundBtn">Sound: on</button>
+      <button id="voiceBtn">Voice: on</button>
+    </div>
+    <label class="sens">Look sensitivity <input type="range" id="sens" min="0.3" max="2.5" step="0.1" value="1"></label>
+    <button id="installBtn" class="hidden">Install app</button>
+    <p class="fine">Fan-made tribute. Not affiliated with Basically Games. All art, sound and code is original and procedurally generated.</p>
+  </div>
+</div>
+
+<div id="help" class="screen hidden">
+  <div class="card">
+    <h2>How to play</h2>
+    <ul>
+      <li><b>Move</b>: WASD / arrows · left stick · <b>Look</b>: mouse · right-side drag</li>
+      <li><b>Run</b>: Shift · RUN button (uses stamina)</li>
+      <li><b>Use / open / take</b>: E, Space or click · USE button</li>
+      <li><b>Use item</b>: right-click or F · ITEM button · pick slot: 1-3 / wheel / tap</li>
+      <li><b>Map</b>: M · Pause: Esc / P</li>
+    </ul>
+    <ul class="items">
+      <li><b>Zesty Bar</b> – refills stamina</li>
+      <li><b>BSODA</b> – spray ahead; shoves and stuns Baldi</li>
+      <li><b>Alarm Clock</b> – set it down; Baldi runs to the ring</li>
+      <li><b>Quarter</b> – buy from the BSODA vending machines</li>
+      <li><b>Principal's Keys</b> – unlock the Principal's office</li>
+      <li><b>Safety Scissors</b> – escape detention</li>
+    </ul>
+    <p>Beware: <b>Playtime</b> makes you jump rope while Baldi closes in, <b>It's a Bully</b> steals items, <b>Gotta Sweep</b> sweeps everyone down the hall, and the <b>Principal</b> punishes running.</p>
+    <div class="btnrow"><button id="helpClose" class="big">OK</button></div>
+  </div>
+</div>
+
+<div id="pause" class="screen hidden">
+  <div class="card"><h2>Paused</h2>
+    <div class="btnrow"><button id="resumeBtn" class="big">Resume</button></div>
+    <div class="btnrow small"><button id="quitBtn">Quit to title</button></div>
+  </div>
+</div>
+
+<div id="over" class="screen hidden">
+  <div class="card"><h2 id="overTitle">Game over</h2><p id="overMsg"></p>
+    <div class="btnrow"><button id="retryBtn" class="big">Try again</button><button id="menuBtn">Title</button></div>
+  </div>
+</div>
+
+<div id="rotate" class="hidden">Rotate your device to landscape for the best view</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
