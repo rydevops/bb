@@ -1013,7 +1013,7 @@ $('installBtn').addEventListener('click', async () => { if (!deferredPrompt) ret
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
 // boot
-const BUILD = 'v7-addsub'; $('build').textContent = BUILD;
+const BUILD = 'v8-landscape'; $('build').textContent = BUILD;
 if (location.search.includes('debug')) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:80px;z-index:99;font:11px monospace;background:#000a;color:#0f0;padding:3px;pointer-events:none'; document.body.appendChild(d); setInterval(() => { d.textContent = `${BUILD} mode=${S.mode} stick=${stick.x.toFixed(2)},${stick.y.toFixed(2)} id=${stickTouch.id} look=${lookTouch.id} P=${P.x.toFixed(0)},${P.z.toFixed(0)}`; }, 100); }
 resetGame(); resize(); updateNb();
 P.yaw = 0;

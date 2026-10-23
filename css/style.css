@@ -73,3 +73,37 @@ button.big{font-size:1.5rem;padding:12px 40px;background:#d63b3b;border-color:#5
 @keyframes shake{0%{transform:translate(4px,3px) scale(1.05)}25%{transform:translate(-5px,2px) scale(1.12)}50%{transform:translate(3px,-4px) scale(1.06)}75%{transform:translate(-3px,-2px) scale(1.14)}100%{transform:translate(4px,4px) scale(1.08)}}
 #rotate{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:40;background:rgba(0,0,0,.8);padding:6px 12px;border-radius:8px;font-size:.8rem;pointer-events:none}
 @media (max-height:420px){#slots{bottom:4px}.slot{width:50px;height:50px}.slot canvas{width:38px;height:38px}#subtitle{bottom:64px;font-size:.95rem}#stick{width:110px;height:110px}#tAct{width:70px;height:70px}#tItem,#tRun{width:60px;height:60px}#tItem{bottom:calc(140px + env(safe-area-inset-bottom))}#tRun{right:calc(100px + env(safe-area-inset-right))}}
+
+/* ---- short (landscape phone) screens: everything must fit without scrolling ---- */
+.screen,#math,#play,#scare{height:100vh;height:100dvh}
+@media (max-height:560px){
+  .screen{padding:6px 10px;align-items:center}
+  .card h1{font-size:clamp(1.3rem,8vh,2.2rem);margin:0 0 .15em}
+  .card h2{font-size:1.3rem;margin:0}
+  .card .lead{font-size:.82rem;line-height:1.3;margin:.2em 0}
+  .card p{line-height:1.3;font-size:.82rem;margin:.3em 0}
+  .card ul{font-size:.78rem!important;line-height:1.3;margin:.2em 0}
+  .btnrow{margin:6px 0;gap:8px}
+  button.big{font-size:1.1rem;padding:6px 30px}
+  .btnrow.small button{font-size:.78rem;padding:5px 9px}
+  button{border-width:2px;box-shadow:0 3px 0 #0d2a18;padding:6px 12px}
+  .sens{margin:2px 0;font-size:.75rem}
+  .fine{margin:.4em 0 0;font-size:.6rem}
+  #installBtn{margin-top:2px;font-size:.75rem;padding:4px 10px}
+  #help .card{max-width:760px}
+  #help ul{columns:2;column-gap:20px}
+  #help ul li{break-inside:avoid}
+
+  /* notebook: question on the left, keypad on the right */
+  #math .board{display:grid;grid-template-columns:1fr auto;grid-template-areas:"head head" "q kp" "a kp" "msg kp";column-gap:14px;align-items:center;width:min(640px,98vw);padding:6px 12px;border-width:7px}
+  #math .mathHead{grid-area:head;font-size:.8rem}
+  #mathQ{grid-area:q;font-size:clamp(1.4rem,9vh,2.2rem);margin:0}
+  #mathA{grid-area:a;font-size:clamp(1.3rem,8vh,2rem);justify-self:center;margin:0}
+  #mathMsg{grid-area:msg;font-size:.8rem;margin:2px 0;min-height:1.2em}
+  #keypad{grid-area:kp;grid-template-columns:repeat(4,46px);gap:4px;max-width:none}
+  #keypad button{padding:0;height:36px;font-size:1.05rem;box-shadow:0 2px 0 #0d2a18;border-width:2px}
+  #keypad button.ok{grid-column:span 2}
+  #play .board{padding:6px 12px;border-width:7px}
+  #ropeBar{height:24px;margin:4px 4px 8px}
+  #jumpBtn{font-size:1.2rem;padding:8px 40px}
+}
