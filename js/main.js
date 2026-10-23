@@ -673,21 +673,21 @@ function startEscape() {
 
 // ------------------------------------------------------------------ playtime mini game
 const playEl = $('play');
-const pt = { hits: 0, pos: 0, dir: 1, speed: 1.6, active: false, zone: [0.4, 0.6] };
+const pt = { hits: 0, pos: 0, dir: 1, speed: 1.6, active: false, zone: [0.275, 0.725] };
 function startPlaytime() {
-  S.mode = 'playtime'; pt.hits = 0; pt.pos = 0; pt.dir = 1; pt.speed = 1.7; pt.active = true;
-  playEl.classList.remove('hidden'); $('playProg').textContent = '0/5'; $('playMsg').textContent = 'Jump when the rope reaches the green!';
+  S.mode = 'playtime'; pt.hits = 0; pt.pos = 0; pt.dir = 1; pt.speed = 0.7; pt.active = true;
+  playEl.classList.remove('hidden'); $('playProg').textContent = '0/3'; $('playMsg').textContent = 'Jump when the rope reaches the green!';
   playtime.state = 'game'; document.exitPointerLock?.(); setPrompt(null);
   Snd.sfx.giggle(); say('<b>Playtime</b>: "Wanna jump rope with me?!"', 2600);
 }
 function jumpPress() {
   if (!pt.active) return;
   if (pt.pos >= pt.zone[0] && pt.pos <= pt.zone[1]) {
-    pt.hits++; Snd.sfx.jump(); $('playProg').textContent = pt.hits + '/5'; $('playMsg').textContent = pick(['Yay!', 'Again!', 'Wheee!', 'Nice jump!']);
-    pt.speed += 0.35;
-    if (pt.hits >= 5) endPlaytime(true);
+    pt.hits++; Snd.sfx.jump(); $('playProg').textContent = pt.hits + '/3'; $('playMsg').textContent = pick(['Yay!', 'Again!', 'Wheee!', 'Nice jump!']);
+    pt.speed += 0.08;
+    if (pt.hits >= 3) endPlaytime(true);
   } else {
-    Snd.sfx.miss(); pt.hits = 0; pt.speed = 1.7; $('playProg').textContent = '0/5'; $('playMsg').textContent = 'Oops! Start over!';
+    Snd.sfx.miss(); pt.hits = Math.max(0, pt.hits - 1); $('playProg').textContent = pt.hits + '/3'; $('playMsg').textContent = 'Oops! Try again!';
   }
 }
 function endPlaytime() {
@@ -791,11 +791,11 @@ function updatePlaytime(dt) {
   if (c.state === 'game') { c.sprite.position.set(c.x, 0, c.z); return; }
   if (!c.goal || Math.hypot(c.goal.x - c.x, c.goal.z - c.z) < 3) c.goal = randHall();
   const d = Math.hypot(P.x - c.x, P.z - c.z);
-  const see = d < 55 && los(c.x, c.z, P.x, P.z);
+  const see = d < 35 && los(c.x, c.z, P.x, P.z);
   if ((c.state === 'wander') && see && S.detention <= 0 && S.mode === 'play') c.state = 'chase';
   if (c.state === 'chase') {
-    if (!see && d > 60) c.state = 'wander';
-    followPath(c, P.x, P.z, 13, dt, false);
+    if (!see && d > 40) c.state = 'wander';
+    followPath(c, P.x, P.z, 7, dt, false);
     if (d < 5) startPlaytime();
   } else if (c.state === 'away') {
     followPath(c, c.goal.x, c.goal.z, 12, dt, false);
@@ -1015,7 +1015,7 @@ $('installBtn').addEventListener('click', async () => { if (!deferredPrompt) ret
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
 // boot
-const BUILD = 'v5-touch'; $('build').textContent = BUILD;
+const BUILD = 'v6-playtime'; $('build').textContent = BUILD;
 if (location.search.includes('debug')) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:80px;z-index:99;font:11px monospace;background:#000a;color:#0f0;padding:3px;pointer-events:none'; document.body.appendChild(d); setInterval(() => { d.textContent = `${BUILD} mode=${S.mode} stick=${stick.x.toFixed(2)},${stick.y.toFixed(2)} id=${stickTouch.id} look=${lookTouch.id} P=${P.x.toFixed(0)},${P.z.toFixed(0)}`; }, 100); }
 resetGame(); resize(); updateNb();
 P.yaw = 0;
