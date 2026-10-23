@@ -871,6 +871,7 @@ function resumeGame() {
   if (!isTouch) canvas.requestPointerLock?.();
 }
 function toTitle() {
+  if (updatePending) { location.reload(); return; }
   Snd.sfx.alarmStop(); Snd.musicStart('title'); Snd.resume();
   S.mode = 'title'; ['pause', 'over', 'help'].forEach((id) => $(id).classList.add('hidden'));
   $('title').classList.remove('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden'); $('scare').classList.add('hidden');
@@ -886,7 +887,7 @@ function caught() {
     $('scare').classList.add('hidden'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
     $('overTitle').textContent = 'Baldi got you!';
     $('overMsg').textContent = `You collected ${S.notebooks} of ${TOTAL_NB} notebooks.`;
-    $('over').classList.remove('hidden'); S.mode = 'over';
+    $('over').classList.remove('hidden'); S.mode = 'over'; setTimeout(applyUpdate, 1200);
   }, 1900);
 }
 function win() {
@@ -1010,10 +1011,36 @@ addEventListener('pointerdown', () => { if (S.mode === 'title' && soundOn) { Snd
 let deferredPrompt = null;
 addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; $('installBtn').classList.remove('hidden'); });
 $('installBtn').addEventListener('click', async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; $('installBtn').classList.add('hidden'); });
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+// Auto-update: check for a new service worker on open (and whenever the app returns to the
+// foreground). When a new version takes over we reload - immediately on menu screens, or as
+// soon as the player is back at the title/game-over screen so a run is never interrupted.
+let updatePending = false;
+function applyUpdate() {
+  if (!updatePending) return;
+  if (S.mode === 'title' || S.mode === 'over' || S.mode === 'win') location.reload();
+}
+function showUpdateToast(msg) {
+  let t = $('updateToast');
+  if (!t) { t = document.createElement('div'); t.id = 'updateToast'; t.style.cssText = 'position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:60;background:#000c;color:#fff;padding:6px 14px;border-radius:8px;font-size:.85rem;pointer-events:none'; document.body.appendChild(t); }
+  t.textContent = msg;
+}
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return;                 // first install, nothing to replace
+    updatePending = true;
+    if (S.mode === 'title' || S.mode === 'over' || S.mode === 'win') { showUpdateToast('Updating…'); setTimeout(() => location.reload(), 300); }
+    else showUpdateToast('Update ready - it will install when you return to the title screen');
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+    reg.update().catch(() => {});
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+    setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+  }).catch(() => {});
+}
 
 // boot
-const BUILD = 'v8-landscape'; $('build').textContent = BUILD;
+const BUILD = 'v9-autoupdate'; $('build').textContent = BUILD;
 if (location.search.includes('debug')) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:80px;z-index:99;font:11px monospace;background:#000a;color:#0f0;padding:3px;pointer-events:none'; document.body.appendChild(d); setInterval(() => { d.textContent = `${BUILD} mode=${S.mode} stick=${stick.x.toFixed(2)},${stick.y.toFixed(2)} id=${stickTouch.id} look=${lookTouch.id} P=${P.x.toFixed(0)},${P.z.toFixed(0)}`; }, 100); }
 resetGame(); resize(); updateNb();
 P.yaw = 0;
