@@ -424,6 +424,9 @@ addEventListener('contextmenu', (e) => e.preventDefault());
 addEventListener('wheel', (e) => { if (S.mode !== 'play') return; S.sel = (S.sel + (e.deltaY > 0 ? 1 : 2)) % 3; Snd.sfx.select(); renderSlots(); });
 document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement !== canvas && S.mode === 'play' && !isTouch) pauseGame(); });
 
+// stop the browser from scrolling / zooming / back-swiping while playing
+['touchmove', 'gesturestart'].forEach((ev) => document.addEventListener(ev, (e) => { if (S.mode !== 'title') e.preventDefault(); }, { passive: false }));
+
 // touch
 const stickEl = $('stick'), knob = $('knob');
 stickEl.addEventListener('pointerdown', (e) => {
