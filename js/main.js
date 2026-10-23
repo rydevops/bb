@@ -394,7 +394,7 @@ function updateDoors(dt) {
 // ------------------------------------------------------------------ input
 const keys = {};
 const stick = { x: 0, y: 0, id: null, cx: 0, cy: 0 };
-let lookId = null, lookLast = null, runBtn = false, actQueued = false, useQueued = false;
+let runBtn = false, actQueued = false, useQueued = false;
 addEventListener('keydown', (e) => {
   if (e.repeat && !['Backspace'].includes(e.code)) { keys[e.code] = true; return; }
   keys[e.code] = true;
@@ -427,41 +427,55 @@ document.addEventListener('pointerlockchange', () => { if (document.pointerLockE
 // stop the browser from scrolling / zooming / back-swiping while playing
 ['touchmove', 'gesturestart'].forEach((ev) => document.addEventListener(ev, (e) => { if (S.mode !== 'title') e.preventDefault(); }, { passive: false }));
 
-// touch
+// touch: raw Touch Events (most reliable on phones). Left 40% of the screen = floating
+// joystick, the rest = look. Buttons / slots / overlays keep their own handling.
 const stickEl = $('stick'), knob = $('knob');
-stickEl.addEventListener('pointerdown', (e) => {
-  stick.id = e.pointerId; stick.canvas = false; stickEl.setPointerCapture(e.pointerId);
-  const r = stickEl.getBoundingClientRect(); stick.cx = r.left + r.width / 2; stick.cy = r.top + r.height / 2; moveStick(e);
-});
-stickEl.addEventListener('pointermove', (e) => { if (e.pointerId === stick.id) moveStick(e); });
-const endStick = (e) => { if (e.pointerId === stick.id) { stick.id = null; stick.x = stick.y = 0; knob.style.transform = ''; } };
-stickEl.addEventListener('pointerup', endStick); stickEl.addEventListener('pointercancel', endStick);
-function moveStick(e) {
-  let dx = e.clientX - stick.cx, dy = e.clientY - stick.cy; const m = 52, d = Math.hypot(dx, dy);
+const stickTouch = { id: null }, lookTouch = { id: null, x: 0, y: 0 };
+const isUiTarget = (t) => !!(t.closest && t.closest('button, .slot, #math, #play, .screen, #hudBtns'));
+function moveStick(x, y) {
+  let dx = x - stick.cx, dy = y - stick.cy; const m = 52, d = Math.hypot(dx, dy);
   if (d > m) { dx = dx / d * m; dy = dy / d * m; }
   stick.x = dx / m; stick.y = dy / m; knob.style.transform = `translate(${dx}px,${dy}px)`;
 }
-canvas.addEventListener('pointerdown', (e) => {
-  if (e.pointerType === 'mouse' || (S.mode !== 'play' && S.mode !== 'playtime')) return;
-  canvas.setPointerCapture(e.pointerId);
-  // left 40% of the screen = floating joystick, the rest = look
-  if (e.clientX < window.innerWidth * 0.4) {
-    if (stick.id === null) {
-      stick.id = e.pointerId; stick.cx = e.clientX; stick.cy = e.clientY; stick.canvas = true;
-      stickEl.style.left = (e.clientX - 70) + 'px'; stickEl.style.top = (e.clientY - 70) + 'px'; stickEl.style.bottom = 'auto';
-      moveStick(e);
+function releaseStick() {
+  stickTouch.id = null; stick.x = stick.y = 0; knob.style.transform = '';
+  stickEl.style.left = stickEl.style.top = stickEl.style.bottom = '';
+}
+function touchesPlaying() { return S.mode === 'play' || S.mode === 'playtime'; }
+document.addEventListener('touchstart', (e) => {
+  if (!touchesPlaying()) return;
+  for (const t of e.changedTouches) {
+    if (isUiTarget(e.target) && t.target !== stickEl && t.target !== knob) continue;
+    if (t.clientX < window.innerWidth * 0.4 || t.target === stickEl || t.target === knob) {
+      if (stickTouch.id !== null) continue;
+      stickTouch.id = t.identifier;
+      const r = stickEl.getBoundingClientRect();
+      if (t.target === stickEl || t.target === knob) { stick.cx = r.left + r.width / 2; stick.cy = r.top + r.height / 2; }
+      else {
+        stick.cx = t.clientX; stick.cy = t.clientY;
+        stickEl.style.left = (t.clientX - r.width / 2) + 'px'; stickEl.style.top = (t.clientY - r.height / 2) + 'px'; stickEl.style.bottom = 'auto';
+      }
+      moveStick(t.clientX, t.clientY);
+    } else if (lookTouch.id === null) { lookTouch.id = t.identifier; lookTouch.x = t.clientX; lookTouch.y = t.clientY; }
+  }
+}, { passive: false });
+document.addEventListener('touchmove', (e) => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickTouch.id) moveStick(t.clientX, t.clientY);
+    else if (t.identifier === lookTouch.id) {
+      const sc = 0.0055 * S.sens;
+      P.yaw -= (t.clientX - lookTouch.x) * sc; P.pitch = clamp(P.pitch - (t.clientY - lookTouch.y) * sc, -1.2, 1.2);
+      lookTouch.x = t.clientX; lookTouch.y = t.clientY;
     }
-  } else if (lookId === null) { lookId = e.pointerId; lookLast = { x: e.clientX, y: e.clientY }; }
-});
-canvas.addEventListener('pointermove', (e) => {
-  if (e.pointerId === stick.id && stick.canvas) { moveStick(e); return; }
-  if (e.pointerId !== lookId) return;
-  const s = 0.0055 * S.sens;
-  P.yaw -= (e.clientX - lookLast.x) * s; P.pitch = clamp(P.pitch - (e.clientY - lookLast.y) * s, -1.2, 1.2);
-  lookLast = { x: e.clientX, y: e.clientY };
-});
-const endLook = (e) => { if (e.pointerId === lookId) lookId = null; if (e.pointerId === stick.id && stick.canvas) { stick.canvas = false; endStick(e); } };
-canvas.addEventListener('pointerup', endLook); canvas.addEventListener('pointercancel', endLook);
+  }
+}, { passive: false });
+const touchEnd = (e) => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === stickTouch.id) releaseStick();
+    if (t.identifier === lookTouch.id) lookTouch.id = null;
+  }
+};
+document.addEventListener('touchend', touchEnd); document.addEventListener('touchcancel', touchEnd);
 $('tRun').addEventListener('pointerdown', (e) => { e.preventDefault(); runBtn = !runBtn; $('tRun').classList.toggle('on', runBtn); });
 $('tAct').addEventListener('pointerdown', (e) => { e.preventDefault(); actQueued = true; });
 $('tItem').addEventListener('pointerdown', (e) => { e.preventDefault(); useQueued = true; });
@@ -851,6 +865,7 @@ function startGame() {
 }
 function pauseGame() {
   if (S.mode !== 'play') return;
+  if (typeof releaseStick === 'function') releaseStick();
   S.mode = 'paused'; $('pause').classList.remove('hidden'); document.exitPointerLock?.(); Snd.suspend();
 }
 function resumeGame() {
@@ -1000,6 +1015,8 @@ $('installBtn').addEventListener('click', async () => { if (!deferredPrompt) ret
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
 // boot
+const BUILD = 'v5-touch'; $('build').textContent = BUILD;
+if (location.search.includes('debug')) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:80px;z-index:99;font:11px monospace;background:#000a;color:#0f0;padding:3px;pointer-events:none'; document.body.appendChild(d); setInterval(() => { d.textContent = `${BUILD} mode=${S.mode} stick=${stick.x.toFixed(2)},${stick.y.toFixed(2)} id=${stickTouch.id} look=${lookTouch.id} P=${P.x.toFixed(0)},${P.z.toFixed(0)}`; }, 100); }
 resetGame(); resize(); updateNb();
 P.yaw = 0;
 requestAnimationFrame(frame);
