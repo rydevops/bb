@@ -427,7 +427,7 @@ document.addEventListener('pointerlockchange', () => { if (document.pointerLockE
 // touch
 const stickEl = $('stick'), knob = $('knob');
 stickEl.addEventListener('pointerdown', (e) => {
-  stick.id = e.pointerId; stickEl.setPointerCapture(e.pointerId);
+  stick.id = e.pointerId; stick.canvas = false; stickEl.setPointerCapture(e.pointerId);
   const r = stickEl.getBoundingClientRect(); stick.cx = r.left + r.width / 2; stick.cy = r.top + r.height / 2; moveStick(e);
 });
 stickEl.addEventListener('pointermove', (e) => { if (e.pointerId === stick.id) moveStick(e); });
@@ -440,15 +440,24 @@ function moveStick(e) {
 }
 canvas.addEventListener('pointerdown', (e) => {
   if (e.pointerType === 'mouse' || (S.mode !== 'play' && S.mode !== 'playtime')) return;
-  if (lookId === null) { lookId = e.pointerId; lookLast = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); }
+  canvas.setPointerCapture(e.pointerId);
+  // left 40% of the screen = floating joystick, the rest = look
+  if (e.clientX < window.innerWidth * 0.4) {
+    if (stick.id === null) {
+      stick.id = e.pointerId; stick.cx = e.clientX; stick.cy = e.clientY; stick.canvas = true;
+      stickEl.style.left = (e.clientX - 70) + 'px'; stickEl.style.top = (e.clientY - 70) + 'px'; stickEl.style.bottom = 'auto';
+      moveStick(e);
+    }
+  } else if (lookId === null) { lookId = e.pointerId; lookLast = { x: e.clientX, y: e.clientY }; }
 });
 canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerId === stick.id && stick.canvas) { moveStick(e); return; }
   if (e.pointerId !== lookId) return;
   const s = 0.0055 * S.sens;
   P.yaw -= (e.clientX - lookLast.x) * s; P.pitch = clamp(P.pitch - (e.clientY - lookLast.y) * s, -1.2, 1.2);
   lookLast = { x: e.clientX, y: e.clientY };
 });
-const endLook = (e) => { if (e.pointerId === lookId) lookId = null; };
+const endLook = (e) => { if (e.pointerId === lookId) lookId = null; if (e.pointerId === stick.id && stick.canvas) { stick.canvas = false; endStick(e); } };
 canvas.addEventListener('pointerup', endLook); canvas.addEventListener('pointercancel', endLook);
 $('tRun').addEventListener('pointerdown', (e) => { e.preventDefault(); runBtn = !runBtn; $('tRun').classList.toggle('on', runBtn); });
 $('tAct').addEventListener('pointerdown', (e) => { e.preventDefault(); actQueued = true; });
