@@ -134,7 +134,7 @@ function addSolidBox(x, z, w, d, h, mat) {
   m.position.set(x, h / 2, z); scene.add(m);
   solids.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
 }
-const boards = ['2 + 2 = ?', '3 × 3', 'a² + b²', '10 − 7', 'HOMEWORK!', '5 + 5 = ?', 'π ≈ 3.14', '9 ÷ 3'];
+const boards = ['2 + 2 = ?', '4 + 3', 'a² + b²', '10 − 7', 'HOMEWORK!', '5 + 5 = ?', 'π ≈ 3.14', '9 − 3'];
 rooms.forEach((r, i) => {
   const doorNorth = r.door[1] < r.z0;
   const farZ = doorNorth ? (r.z1 + 1) * CELL : r.z0 * CELL;
@@ -592,12 +592,10 @@ const mathMsg = (t) => { $('mathMsg').textContent = t; };
 function genQuestions(n) {
   const qs = [];
   for (let i = 0; i < 3; i++) {
+    const lv = n;                       // notebook number 1..7: bigger numbers later
     let q, a;
-    const lv = n, t = Math.random();
-    if (i === 2 && n >= 4) { const x = ri(2, 6 + lv), y = ri(2, 9), z = ri(2, 9); q = `${x} + ${y} × ${z} =`; a = x + y * z; }
-    else if (t < 0.4) { const x = ri(1, 4 + lv * 2), y = ri(1, 4 + lv * 2); q = `${x} + ${y} =`; a = x + y; }
-    else if (t < 0.7) { const x = ri(4, 8 + lv * 3), y = ri(1, x); q = `${x} − ${y} =`; a = x - y; }
-    else { const x = ri(2, 4 + lv), y = ri(2, 9); q = `${x} × ${y} =`; a = x * y; }
+    if (Math.random() < 0.5) { const x = ri(1, 5 + lv * 3), y = ri(1, 5 + lv * 3); q = `${x} + ${y} =`; a = x + y; }
+    else { const x = ri(3, 9 + lv * 3), y = ri(1, x); q = `${x} − ${y} =`; a = x - y; }
     qs.push({ q, a });
   }
   return qs;
@@ -615,8 +613,8 @@ function showQ(first) {
   $('mathProg').textContent = `Problem ${mq.i + 1}/3`;
   mathMsg(first && S.notebooks === 0 ? "Hello! Let's learn some basics!" : '');
   Snd.sfx.talk(1);
-  if (!first || S.notebooks > 0) Snd.speak(`Problem ${mq.i + 1}. ${q.q.replace('×', 'times').replace('−', 'minus').replace('=', '')}`);
-  else Snd.speak("Hello! Let's learn some basics! " + q.q.replace('×', 'times').replace('−', 'minus').replace('=', ''));
+  if (!first || S.notebooks > 0) Snd.speak(`Problem ${mq.i + 1}. ${q.q.replace('−', 'minus').replace('+', 'plus').replace('=', '')}`);
+  else Snd.speak("Hello! Let's learn some basics! " + q.q.replace('−', 'minus').replace('+', 'plus').replace('=', ''));
 }
 function mathInput(k) {
   if (!mq || mq.lock) return;
@@ -1015,7 +1013,7 @@ $('installBtn').addEventListener('click', async () => { if (!deferredPrompt) ret
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
 // boot
-const BUILD = 'v6-playtime'; $('build').textContent = BUILD;
+const BUILD = 'v7-addsub'; $('build').textContent = BUILD;
 if (location.search.includes('debug')) { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:6px;top:80px;z-index:99;font:11px monospace;background:#000a;color:#0f0;padding:3px;pointer-events:none'; document.body.appendChild(d); setInterval(() => { d.textContent = `${BUILD} mode=${S.mode} stick=${stick.x.toFixed(2)},${stick.y.toFixed(2)} id=${stickTouch.id} look=${lookTouch.id} P=${P.x.toFixed(0)},${P.z.toFixed(0)}`; }, 100); }
 resetGame(); resize(); updateNb();
 P.yaw = 0;
