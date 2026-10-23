@@ -28,7 +28,7 @@ button.big{font-size:1.5rem;padding:12px 40px;background:#d63b3b;border-color:#5
 
 /* touch controls */
 #touch{position:fixed;inset:0;pointer-events:none}
-#stick{position:absolute;left:calc(26px + env(safe-area-inset-left));bottom:calc(24px + env(safe-area-inset-bottom));width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.3)}
+#stick{pointer-events:auto;touch-action:none;position:absolute;left:calc(26px + env(safe-area-inset-left));bottom:calc(24px + env(safe-area-inset-bottom));width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.3)}
 #knob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px;border-radius:50%;background:rgba(255,255,255,.35)}
 #touch button{position:absolute;pointer-events:auto;border-radius:50%;width:74px;height:74px;padding:0;background:rgba(40,90,60,.7);font-size:.95rem}
 #tRun{right:calc(110px + env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom))}
