@@ -125,14 +125,16 @@ export function buildWorld(scene, mirror) {
     const dd = Math.sqrt(d2); p.x = qx + dx / dd * r; p.z = qz + dz / dd * r;
   }
   w.resolve = (p, r) => {
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) { const h = w.randHall(); p.x = h.x; p.z = h.z; }   // never let a NaN position poison the game
     for (let it = 0; it < 2; it++) {
       const cx = toCell(p.x), cz = toCell(p.z);
       for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) if (w.solidCell(cx + dx, cz + dz)) pushOut(p, r, (cx + dx) * CELL, (cz + dz) * CELL, (cx + dx + 1) * CELL, (cz + dz + 1) * CELL);
       for (const s of solids) { if (Math.abs(p.x - (s.x0 + s.x1) / 2) > 14 || Math.abs(p.z - (s.z0 + s.z1) / 2) > 14) continue; pushOut(p, r, s.x0, s.z0, s.x1, s.z1); }
     }
+    p.x = clamp(p.x, 0.5, W * CELL - 0.5); p.z = clamp(p.z, 0.5, H * CELL - 0.5);   // stay inside the map even if shoved
   };
   const blocksSight = (cx, cz) => { const c = cellAt(cx, cz); if (c === '#') return true; if (c === 'D' || c === 'L') return doorMap.get(cx + ',' + cz).openAmt < 0.5; return false; };
-  const ray = (ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, dist = Math.hypot(dx, dz), n = Math.ceil(dist / 1.5); for (let i = 1; i < n; i++) { const t = i / n; if (blocksSight(toCell(ax + dx * t), toCell(az + dz * t))) return false; } return true; };
+  const ray = (ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, dist = Math.hypot(dx, dz); if (!Number.isFinite(dist)) return false; const n = Math.min(120, Math.ceil(dist / 1.5)); for (let i = 1; i < n; i++) { const t = i / n; if (blocksSight(toCell(ax + dx * t), toCell(az + dz * t))) return false; } return true; };
   w.los = (x0, z0, x1, z1, width = 0) => {
     if (!ray(x0, z0, x1, z1)) return false;
     if (!width) return true;
@@ -145,20 +147,29 @@ export function buildWorld(scene, mirror) {
     if (c === 'L' || c === 'D') { const dd = doorMap.get(cx + ',' + cz); if (dd.gate && dd.locked) return false; if ((dd.locked || dd.lockT > 0) && !canBreak) return false; }
     return true;
   };
+  // BFS over the grid. Bounded: each cell is queued at most once, and a start/target outside the map (or NaN) returns null
+  // instead of corrupting the search (this used to be able to loop forever and exhaust memory).
+  const N = W * H, inBounds = (x, z) => Number.isInteger(x) && Number.isInteger(z) && x >= 0 && z >= 0 && x < W && z < H;
   w.nextStep = (sx, sz, tx, tz, canBreak) => {
-    if (sx === tx && sz === tz) return null;
-    const key = (x, z) => z * W + x, prev = new Int32Array(W * H).fill(-1), q = [key(sx, sz)]; prev[q[0]] = q[0];
-    const target = key(tx, tz);
-    for (let h = 0; h < q.length; h++) {
-      const k = q[h]; if (k === target) break;
-      const x = k % W, z = (k / W) | 0;
-      for (const [dx, dz] of DIRS) { const nx = x + dx, nz = z + dz; if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue; const nk = key(nx, nz); if (prev[nk] !== -1 || !passable(nx, nz, canBreak)) continue; prev[nk] = k; q.push(nk); }
+    if (!inBounds(sx, sz) || !inBounds(tx, tz) || (sx === tx && sz === tz)) return null;
+    const seen = new Uint8Array(N), prev = new Int32Array(N), q = new Int32Array(N);
+    const start = sz * W + sx, target = tz * W + tx; let qh = 0, qt = 0;
+    q[qt++] = start; seen[start] = 1; prev[start] = start;
+    while (qh < qt && !seen[target]) {
+      const k = q[qh++], x = k % W, z = (k / W) | 0;
+      for (const [dx, dz] of DIRS) {
+        const nx = x + dx, nz = z + dz; if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue;
+        const nk = nz * W + nx; if (seen[nk] || !passable(nx, nz, canBreak)) continue;
+        seen[nk] = 1; prev[nk] = k; q[qt++] = nk;
+      }
     }
-    if (prev[target] === -1) return null;
-    let k = target; while (prev[k] !== key(sx, sz)) k = prev[k];
+    if (!seen[target]) return null;
+    let k = target;
+    for (let guard = 0; guard < N && prev[k] !== start; guard++) k = prev[k];
     return { x: k % W, z: (k / W) | 0 };
   };
   w.followPath = (e, gx_, gz_, speed, dt, canBreak = false) => {
+    if (!Number.isFinite(e.x) || !Number.isFinite(e.z)) return 0;
     e.pathT = (e.pathT || 0) - dt;
     const gx = toCell(gx_), gz = toCell(gz_);
     if (e.pathT <= 0 || e.pgx !== gx || e.pgz !== gz) {

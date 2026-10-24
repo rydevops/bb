@@ -285,15 +285,21 @@ function submit() {
   else {
     pad.wrong++; S.wrong++; Snd.sfx.wrong();
     padMsg(q.impossible ? 'I GET ANGRIER FOR EVERY PROBLEM YOU GET WRONG!' : `Wrong! It was ${q.a}.`); Snd.speak(q.impossible ? 'I get angrier for every problem you get wrong!' : 'Oh no, that is wrong!', 0.25);
-    G.actors.onWrong(pad.i, q.impossible, pad);
+    try { G.actors.onWrong(pad.i, q.impossible, pad); } catch (e) { console.error(e); }
   }
-  setTimeout(() => { pad.i++; if (pad.i >= 3) finishPad(); else { pad.lock = false; showQ(); } }, 1300);
+  const p = pad;
+  setTimeout(() => {
+    if (pad !== p) return;   // the pad was closed some other way (quit, restart)
+    try { pad.i++; if (pad.i >= 3) finishPad(); else { pad.lock = false; showQ(); } }
+    catch (e) { console.error(e); recoverPad(); }   // never leave the pad locked
+  }, 1300);
 }
+function recoverPad() { pad = null; $('math').classList.add('hidden'); $('mathQ').classList.remove('glitch'); if (S.mode === 'pad') S.mode = 'play'; G.lockPointer(); }
 function finishPad() {
   const nb = pad.nb, info = pad; pad = null;
   $('math').classList.add('hidden'); S.mode = 'play'; $('mathQ').classList.remove('glitch');
-  if (!isTouch) G.R.renderer.domElement.requestPointerLock?.();
-  collectNotebook(nb, info);
+  G.lockPointer();
+  try { collectNotebook(nb, info); } catch (e) { console.error(e); }
 }
 export function collectNotebook(nb, info = null) {
   if (nb) { nb.taken = true; G.root.remove(nb.mesh); }

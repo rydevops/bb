@@ -113,9 +113,18 @@ actors.pushables = () => {
   if (a.bully.state === 'block') out.push(a.bully);
   return out;
 };
+// push an actor along (fx,fz) up to dist units, stopping at walls and closed doors instead of popping through them
+function shove(c, fx, fz, dist) {
+  const w = G.world, step = 1.5;
+  for (let d = 0; d < dist; d += step) {
+    const px = c.x, pz = c.z; c.x += fx * step; c.z += fz * step; w.resolve(c, 1.5);
+    if (Math.hypot(c.x - px, c.z - pz) < step * 0.5) break;   // hit something
+  }
+}
 actors.onBsoda = (c, fx, fz) => {
   if (c === actors.sweep) { c.stun = 2; return; }
-  c.x += fx * 10; c.z += fz * 10; G.world.resolve(c, 1.5); c.stun = 4;
+  const jd = c === actors.jd;
+  shove(c, fx, fz, jd ? 34 : 10); c.stun = jd ? 6 : 4;   // BSODA throws JD much further back than anyone else
   if (c === actors.bully) { bullyLeave(40); say('<b>It\'s a Bully</b> got soaked and ran off!', 1800); }
   else if (c === actors.jd) say('<b>JD</b> is stunned!', 1500);
   else if (c === actors.playtime && S.mode === 'playtime') endPlaytime();
@@ -273,7 +282,7 @@ actors.jumpPress = () => {
 };
 function endPlaytime(cut) {
   const c = actors.playtime; pt.active = false; $('play').classList.add('hidden'); S.mode = 'play';
-  if (!G.isTouch) G.R.renderer.domElement.requestPointerLock?.();
+  G.lockPointer();
   c.state = 'away'; c.timer = ch().playtime.cooldownSec; c.goal = G.world.randHall();
   Snd.sfx.giggle(); say(cut ? '<b>Playtime</b>: "My rope!! Meanie!"' : '<b>Playtime</b>: "That was fun! Bye!"', 2000);
 }
