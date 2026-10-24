@@ -273,7 +273,7 @@ actors.jumpPress = () => {
 };
 function endPlaytime(cut) {
   const c = actors.playtime; pt.active = false; $('play').classList.add('hidden'); S.mode = 'play';
-  if (!G.isTouch) G.R.renderer.domElement.requestPointerLock?.();
+  G.lockPointer();
   c.state = 'away'; c.timer = ch().playtime.cooldownSec; c.goal = G.world.randHall();
   Snd.sfx.giggle(); say(cut ? '<b>Playtime</b>: "My rope!! Meanie!"' : '<b>Playtime</b>: "That was fun! Bye!"', 2000);
 }

@@ -10,9 +10,9 @@ import './modes.js';
 import { initGame, startRun, update, pause, resume, padInput, applyLook } from './game.js';
 import { initUI, M, renderMenu } from './ui.js';
 
-const BUILD = 'v10-spec';
+const BUILD = 'v10.1-padfix';
 const canvas = $('view');
-let R = null, last = performance.now(), menuYaw = 0, lastOpts = null, wakeLock = null;
+let failures = 0, R = null, last = performance.now(), menuYaw = 0, lastOpts = null, wakeLock = null;
 const keys = {}, stick = { x: 0, y: 0, cx: 0, cy: 0 };
 let runBtn = false, behindBtn = false;
 const settings = () => Save.settings;
@@ -54,7 +54,7 @@ function start(style, run, fun) {
   if (style === 'null' || style === 'glitch') { G.musicHold = 0; Snd.music.stop(); G.musicWant = null; }
   const intro = { classic: 'Find the <b>7 notebooks</b> in the classrooms. JD hears every noise…', party: "It's a party! Presents hide your items. Find the <b>7 notebooks</b>.", demo: 'Demo Style: feed the Math Machines <b>balloons</b> to get notebooks.', null: 'Quiet. Collect the notebooks. Make no sound.', glitch: 'Something is off in the school…' }[style];
   G.say(run === 'endless' ? 'Endless: collect as many notebooks as you can!' : run === 'free' ? 'Free Run: explore. There is no JD.' : intro, 5000);
-  if (!isTouch) canvas.requestPointerLock?.(); else { document.documentElement.requestFullscreen?.()?.catch?.(() => {}); }
+  if (!isTouch) G.lockPointer(); else { try { document.documentElement.requestFullscreen?.()?.catch?.(() => {}); } catch (e) {} }
   try { screen.orientation?.lock?.('landscape')?.catch?.(() => {}); } catch (e) {}
   takeWake(); checkOrientation();
 }
@@ -89,7 +89,7 @@ addEventListener('mousemove', (e) => {
 });
 addEventListener('mousedown', (e) => {
   if (S.mode !== 'play' && S.mode !== 'playtime') return;
-  if (document.pointerLockElement !== canvas) { if (!isTouch && e.target === canvas) canvas.requestPointerLock?.(); return; }
+  if (document.pointerLockElement !== canvas) { if (!isTouch && e.target === canvas) G.lockPointer(); return; }
   if (e.button === 0) input.act = true; else if (e.button === 2) input.use = true;
 });
 addEventListener('contextmenu', (e) => e.preventDefault());
@@ -166,9 +166,15 @@ function frame(now) {
   input.mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + stick.x;
   input.mz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) - stick.y;
   input.run = !!(keys.ShiftLeft || keys.ShiftRight || runBtn); input.behind = !!(keys.KeyC || behindBtn);
-  if (S.mode === 'play' || S.mode === 'playtime') update(dt);
-  else if (S.mode === 'pad' && !cfg.ai.padPausesWorld) update(dt);
-  else if (S.mode === 'menu' || S.mode === 'boot') menuYaw += dt * 0.12;
+  try {
+    if (S.mode === 'play' || S.mode === 'playtime') update(dt);
+    else if (S.mode === 'pad' && !cfg.ai.padPausesWorld) update(dt);
+    failures = 0;
+  } catch (e) {   // a bug in one frame must never freeze the picture; give up cleanly if it keeps happening
+    console.error(e);
+    if (++failures > 60) { failures = 0; G.say('Something went wrong – back to the menu.', 3000, undefined, { force: true }); exitToMenu(); }
+  }
+  if (S.mode === 'menu' || S.mode === 'boot') menuYaw += dt * 0.12;
   const cam = G.camera, bob = Math.sin(P.bob) * 0.22 * (P.moving ? 1 : 0);
   if (S.mode === 'menu' || S.mode === 'boot') { cam.position.set(cellCenter(15), 5, cellCenter(8)); cam.rotation.set(0, menuYaw, 0); }
   else {
@@ -223,6 +229,6 @@ function enterMenu() {
   if (isStandalone()) $('installBtn').classList.add('hidden');
   checkOrientation();
 }
-window.__game = { G, S, P, Save, cfg, BUILD, start, exitToMenu };
+window.__game = { G, S, P, Save, cfg, BUILD, start, exitToMenu, update };
 $('bootMsg').textContent = 'Loading… ' + BUILD;
 boot();

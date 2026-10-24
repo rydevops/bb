@@ -25,3 +25,10 @@ export const S = {
 export const P = { x: 0, z: 0, yaw: 0, pitch: 0, vx: 0, vz: 0, r: 1.5, bob: 0, running: false, moving: false, exhausted: false, boots: 0, shoveX: 0, shoveZ: 0, y: 0, lastStep: 0 };
 export const input = { mx: 0, mz: 0, run: false, act: false, use: false, behind: false };
 export const G = { isTouch, S, P, input, cfg, R: null, scene: null, camera: null, world: null, worlds: {}, Snd: null, Save: null, hooks: {} };
+
+// Pointer lock can throw synchronously ("too many requests") or reject; neither may break game flow.
+export function lockPointer() {
+  if (isTouch) return;
+  try { const el = document.getElementById('view'); const r = el.requestPointerLock?.(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* ignore */ }
+}
+G.lockPointer = lockPointer;
