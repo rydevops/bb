@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Baldi's Basics 3D</title>
-<meta name="theme-color" content="#1c3d2a">
-<meta name="description" content="A 3D fan-made clone of Baldi's Basics Classic Remastered. Collect 7 notebooks and escape.">
+<title>JD's Basics Classic Remastered</title>
+<meta name="theme-color" content="#101010">
+<meta name="description" content="A stealth-horror parody of 90s edutainment. Collect 7 notebooks and escape.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="JD's Basics">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -24,6 +25,8 @@
   <div id="crosshair"></div>
   <div id="prompt"></div>
   <div id="subtitle"></div>
+  <div id="carry"></div>
+  <div id="eventBanner"></div>
   <div id="flash"></div>
   <canvas id="minimap" width="248" height="200" class="hidden"></canvas>
   <div id="hudBtns">
@@ -35,13 +38,14 @@
 <div id="touch" class="hidden">
   <div id="stick"><div id="knob"></div></div>
   <button id="tRun">RUN</button>
-  <button id="tAct">USE</button>
-  <button id="tItem">ITEM</button>
+  <button id="tAct">TAP</button>
+  <button id="tItem">USE</button>
+  <button id="tBehind">⟲</button>
 </div>
 
 <div id="math" class="hidden">
   <div class="board">
-    <div class="mathHead"><span id="mathTitle">NOTEBOOK</span><span id="mathProg"></span></div>
+    <div class="mathHead"><span id="mathTitle">YOU CAN THINK PAD</span><span id="mathProg"></span></div>
     <div id="mathQ">1 + 1 =</div>
     <div id="mathA">&nbsp;</div>
     <div id="mathMsg">&nbsp;</div>
@@ -51,70 +55,129 @@
 
 <div id="play" class="hidden">
   <div class="board">
-    <div class="mathHead"><span>PLAYTIME</span><span id="playProg">0/3</span></div>
+    <div class="mathHead"><span>PLAYTIME</span><span id="playProg">0/5</span></div>
     <div id="playMsg">Jump when the rope reaches the green!</div>
     <div id="ropeBar"><div id="ropeZone"></div><div id="ropeMark"></div></div>
     <button id="jumpBtn">JUMP!</button>
+    <button id="cutBtn" class="hidden">✂ Cut the rope</button>
   </div>
 </div>
 
 <div id="scare" class="hidden"><canvas id="scareCv" width="512" height="768"></canvas></div>
+<div id="scene" class="hidden"><canvas id="sceneImg" width="256" height="384"></canvas><div id="sceneText"></div><small>tap to continue</small></div>
+<div id="candle" class="hidden"><canvas id="candleCv" width="256" height="220"></canvas><div id="candleMsg"></div><button id="blowBtn" class="big">BLOW!</button></div>
 
-<div id="title" class="screen">
+<!-- first screen: audio is locked until a tap on iOS and Android, so this gate creates the AudioContext -->
+<div id="gate" class="screen">
   <div class="card">
-    <h1>BALDI'S BASICS<small>3D · Classic Remastered clone</small></h1>
-    <p class="lead">Collect all <b>7 notebooks</b>, solve the math, and <b>escape the schoolhouse</b>.<br>Every wrong answer makes Baldi angrier. Don't run in the halls near the Principal!</p>
-    <div class="btnrow">
-      <button id="startBtn" class="big">PLAY</button>
-    </div>
-    <div class="btnrow small">
-      <button id="helpBtn">How to play</button>
-      <button id="soundBtn">Sound: on</button>
-      <button id="voiceBtn">Voice: on</button>
-    </div>
-    <label class="sens">Look sensitivity <input type="range" id="sens" min="0.3" max="2.5" step="0.1" value="1"></label>
-    <button id="installBtn" class="hidden">Install app</button>
-    <p class="fine">Build <span id="build"></span> · Fan-made tribute. Not affiliated with Basically Games. All art, sound and code is original and procedurally generated.</p>
+    <h1>JD'S BASICS<small>CLASSIC REMASTERED</small></h1>
+    <p id="bootMsg" class="lead">Loading…</p>
+    <div class="btnrow"><button id="tapBtn" class="big hidden">TAP TO START</button></div>
   </div>
 </div>
 
-<div id="help" class="screen hidden">
+<div id="warning" class="screen hidden">
   <div class="card">
+    <h2>⚠ Heads up</h2>
+    <p>This is a horror <b>parody</b> of cheap 90s educational games. It has loud noises, a chasing character and, in hidden modes, flashing and distorted visuals. Players sensitive to flashing lights should keep <b>Reduce Flashing</b> on.</p>
+    <label class="check"><input type="checkbox" id="warnReduce"> Reduce Flashing</label>
+    <div class="btnrow"><button id="warnOk" class="big">I understand</button></div>
+  </div>
+</div>
+
+<div id="menu" class="screen hidden">
+  <div class="card wide">
+    <h1>JD'S BASICS<small>CLASSIC REMASTERED</small></h1>
+    <div class="cols">
+      <div class="col"><h3>Style</h3><div id="styleBtns" class="stack"></div></div>
+      <div class="col"><h3>Mode</h3><div id="modeBtns" class="stack"></div></div>
+      <div class="col"><h3>Fun Settings</h3><div id="funBtns" class="stack"></div></div>
+    </div>
+    <div id="menuHint">Collect 7 notebooks, then escape.</div>
+    <div class="btnrow menuBottom">
+      <button id="trophyBtn">🏆 Trophies</button><button id="helpBtn">? Help</button>
+      <button id="startBtn" class="big">PLAY</button>
+      <button id="settingsBtn">⚙ Settings</button><button id="installBtn" class="hidden">⬇ Install</button>
+    </div>
+  </div>
+</div>
+
+<div id="settings" class="screen hidden">
+  <div class="card wide">
+    <h2>Settings</h2>
+    <div class="cols settingsGrid">
+      <div class="col">
+        <label>Music <input type="range" id="sMusic" min="0" max="1" step="0.05"></label>
+        <label>Effects <input type="range" id="sSfx" min="0" max="1" step="0.05"></label>
+        <label>Voice <input type="range" id="sVoice" min="0" max="1" step="0.05"></label>
+        <label>Look sensitivity <input type="range" id="sSens" min="0.3" max="2.5" step="0.1"></label>
+        <label>Quality <select id="sQuality"><option value="180">Low 320×180</option><option value="240">Normal 427×240</option><option value="360">High 640×360</option></select></label>
+      </div>
+      <div class="col">
+        <label class="check"><input type="checkbox" id="sLefty"> Left-handed layout</label>
+        <label class="check"><input type="checkbox" id="sReduce"> Reduce Flashing</label>
+        <label class="check"><input type="checkbox" id="sSubs"> Subtitles</label>
+        <label class="check"><input type="checkbox" id="sHaptics"> Vibration</label>
+        <label class="check"><input type="checkbox" id="sContrast"> High-contrast HUD</label>
+      </div>
+    </div>
+    <div id="storageNote" class="fine"></div>
+    <div class="btnrow small"><button id="sExport">Export progress</button><button id="sImport">Import progress</button><button id="sReset">Reset progress</button><button id="settingsClose" class="done">Done</button></div>
+    <input type="file" id="importFile" accept="application/json" class="hidden">
+  </div>
+</div>
+
+<div id="trophies" class="screen hidden">
+  <div class="card wide"><h2>Trophies</h2><div id="trophyList"></div><div id="scoreList" class="fine"></div><div class="btnrow"><button id="trophyClose" class="done">Back</button></div></div>
+</div>
+
+<div id="help" class="screen hidden">
+  <div class="card wide">
     <h2>How to play</h2>
-    <ul>
-      <li><b>Move</b>: WASD / arrows · left stick · <b>Look</b>: mouse · right-side drag</li>
-      <li><b>Run</b>: Shift · RUN button (uses stamina)</li>
-      <li><b>Use / open / take</b>: E, Space or click · USE button</li>
-      <li><b>Use item</b>: right-click or F · ITEM button · pick slot: 1-3 / wheel / tap</li>
-      <li><b>Map</b>: M · Pause: Esc / P</li>
-    </ul>
-    <ul class="items">
-      <li><b>Zesty Bar</b> – refills stamina</li>
-      <li><b>BSODA</b> – spray ahead; shoves and stuns Baldi</li>
-      <li><b>Alarm Clock</b> – set it down; Baldi runs to the ring</li>
-      <li><b>Quarter</b> – buy from the BSODA vending machines</li>
-      <li><b>Principal's Keys</b> – unlock the Principal's office</li>
-      <li><b>Safety Scissors</b> – escape detention</li>
-    </ul>
-    <p>Beware: <b>Playtime</b> makes you jump rope while Baldi closes in, <b>It's a Bully</b> steals items, <b>Gotta Sweep</b> sweeps everyone down the hall, and the <b>Principal</b> punishes running.</p>
-    <div class="btnrow"><button id="helpClose" class="big">OK</button></div>
+    <div class="cols">
+      <ul class="col">
+        <li><b>Move</b>: stick under your left thumb · WASD</li>
+        <li><b>Look</b>: drag the right side · mouse</li>
+        <li><b>Run</b>: hold RUN · Shift (uses stamina)</li>
+        <li><b>Tap</b>: tap an object in the middle of the view, or TAP · E / click</li>
+        <li><b>Use item</b>: USE · F / right-click · pick a slot at the top</li>
+        <li><b>Look behind</b>: hold ⟲ · C</li>
+      </ul>
+      <ul class="col items">
+        <li><b>JD hears every noise</b>: doors, running, wrong answers</li>
+        <li><b>BSODA</b> pushes things · <b>Alarm</b> lures JD · <b>Tape</b> deafens JD</li>
+        <li><b>Scissors</b> cut Playtime's rope · <b>Boots</b> beat Gotta Sweep</li>
+        <li><b>Quarter</b>: pay the Bully or the vending machine</li>
+        <li><b>Apple</b>: JD stops to eat · <b>Lock</b> / <b>NoSquee</b> / <b>Zesty</b> / <b>Keys</b></li>
+      </ul>
+    </div>
+    <div class="btnrow"><button id="helpClose" class="done">OK</button></div>
   </div>
 </div>
 
 <div id="pause" class="screen hidden">
   <div class="card"><h2>Paused</h2>
     <div class="btnrow"><button id="resumeBtn" class="big">Resume</button></div>
-    <div class="btnrow small"><button id="quitBtn">Quit to title</button></div>
+    <div class="btnrow small"><button id="quitBtn">Quit to menu</button></div>
+    <div id="quitConfirm" class="hidden"><p>Quit this run?</p><div class="btnrow small"><button id="quitYes">YES</button><button id="quitNo">NO</button></div></div>
   </div>
 </div>
 
 <div id="over" class="screen hidden">
   <div class="card"><h2 id="overTitle">Game over</h2><p id="overMsg"></p>
-    <div class="btnrow"><button id="retryBtn" class="big">Try again</button><button id="menuBtn">Title</button></div>
+    <div class="btnrow"><button id="retryBtn" class="big">Try again</button><button id="menuBtn">Menu</button></div>
   </div>
 </div>
 
-<div id="rotate" class="hidden">Rotate your device to landscape for the best view</div>
+<div id="iosCard" class="screen hidden">
+  <div class="card">
+    <h2>Install on iPhone / iPad</h2>
+    <ol class="ios"><li>Tap the <b>Share</b> button <span class="share">⬆︎</span> in Safari</li><li>Choose <b>Add to Home Screen</b> <span class="share">➕</span></li><li>Open <b>JD's Basics</b> from your home screen to play full-screen and offline</li></ol>
+    <div class="btnrow"><button id="iosOk" class="big">Got it</button></div>
+  </div>
+</div>
+
+<div id="rotate" class="hidden"><div>⟳<br>Rotate your device<br><small>JD's Basics is played in landscape</small></div></div>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

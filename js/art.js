@@ -89,12 +89,12 @@ export function chalkboardTex(text) {
   return toTex(c, { nearest: false });
 }
 const POSTERS = [
-  ['WELCOME!', '#3b82c4', 'to Baldi-ish\nBasics School'],
+  ['WELCOME!', '#3b82c4', "to JD's\nBasics School"],
   ['QUIET', '#c4553b', 'in the halls\nplease'],
   ['MATH IS', '#3bc47a', 'FUN!\n(allegedly)'],
   ['NO', '#c4a53b', 'running in\nthe halls'],
   ['READ', '#8a3bc4', 'a book\ntoday'],
-  ['7 + 7', '#3b9ec4', '= ?\nask Baldi'],
+  ['7 + 7', '#3b9ec4', '= ?\nask JD'],
   ['LUNCH', '#c43b8a', 'is at 12:00\n(never)'],
 ];
 export function posterTex(i) {
@@ -154,6 +154,23 @@ export function itemIcon(type) {
     case 'keys':
       g.strokeStyle = '#c9a227'; g.lineWidth = 6; g.beginPath(); g.arc(20, 32, 11, 0, 7); g.stroke();
       g.fillStyle = '#c9a227'; g.fillRect(28, 29, 28, 6); g.fillRect(46, 33, 5, 10); g.fillRect(36, 33, 5, 8); break;
+    case 'tape':
+      rr(10, 18, 44, 30, '#444'); g.fillStyle = '#ddd'; g.beginPath(); g.arc(24, 33, 6, 0, 7); g.arc(40, 33, 6, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = '#e44'; g.fillRect(14, 22, 36, 5); g.fillStyle = '#fff'; g.font = 'bold 8px sans-serif'; g.fillText('JD', 52, 14); break;
+    case 'nosquee':
+      rr(22, 14, 20, 38, '#e8c020'); rr(26, 6, 12, 10, '#2a62c8'); g.fillStyle = '#c22'; g.font = 'bold 10px sans-serif'; g.fillText('WD', 22, 36); g.fillText('NO', 24, 46); break;
+    case 'lock':
+      g.strokeStyle = '#999'; g.lineWidth = 6; g.beginPath(); g.arc(32, 24, 11, Math.PI, 0); g.stroke();
+      rr(16, 26, 32, 26, '#f0c814'); g.fillStyle = '#222'; g.beginPath(); g.arc(32, 36, 4, 0, 7); g.fill(); g.fillRect(30, 36, 4, 10); break;
+    case 'boots':
+      rr(14, 14, 16, 34, '#6b4a2a'); rr(14, 40, 34, 12, '#6b4a2a'); rr(14, 14, 16, 6, '#c9a227'); g.fillStyle = '#111'; g.fillRect(14, 48, 34, 4); break;
+    case 'apple':
+      g.fillStyle = '#d82a2a'; g.beginPath(); g.arc(25, 36, 14, 0, 7); g.arc(39, 36, 14, 0, 7); g.fill(); g.stroke();
+      g.strokeStyle = '#5a3a1a'; g.lineWidth = 4; g.beginPath(); g.moveTo(32, 26); g.lineTo(34, 12); g.stroke();
+      g.fillStyle = '#3a9a46'; g.beginPath(); g.ellipse(41, 16, 8, 4, -0.5, 0, 7); g.fill(); break;
+    case 'present':
+      rr(10, 24, 44, 30, '#e0407a'); g.fillStyle = '#ffe14a'; g.fillRect(29, 24, 6, 30); g.fillRect(10, 36, 44, 6);
+      g.beginPath(); g.arc(24, 18, 7, 0, 7); g.arc(40, 18, 7, 0, 7); g.fill(); g.stroke(); break;
     case 'alarm':
       g.fillStyle = '#e04040'; g.beginPath(); g.arc(32, 36, 18, 0, 7); g.fill(); g.stroke();
       g.fillStyle = '#fff'; g.beginPath(); g.arc(32, 36, 13, 0, 7); g.fill();
@@ -202,7 +219,7 @@ function mouth(g, cx, y, mood) {
   else { g.beginPath(); g.moveTo(cx - 14, y); g.lineTo(cx + 14, y); g.stroke(); }
 }
 
-export function drawBaldi(mood = 'happy', slap = false, w = 256, h = 384) {
+export function drawJD(mood = 'happy', slap = false, w = 256, h = 384) {
   const c = cv(256, 384), g = c.getContext('2d');
   const cx = 128;
   body(g, { skin: '#f0bd8a', shirt: '#3a9a46', pants: '#5a3a22', tie: '#e2402a', head: 56, headY: 100 });
@@ -276,4 +293,136 @@ export function makeSprite(canvas, height) {
   s.scale.set(height * (canvas.width / canvas.height), height, 1);
   s.center.set(0.5, 0);
   return s;
+}
+
+
+// ---------- extra characters (original drawings) ----------
+export function drawFirstPrize() {
+  const c = cv(256, 384), g = c.getContext('2d'); g.lineWidth = 5; g.strokeStyle = '#1a1a1a'; g.lineJoin = 'round';
+  g.fillStyle = '#c9ccd2'; g.fillRect(70, 180, 116, 150); g.strokeRect(70, 180, 116, 150);       // body
+  g.fillStyle = '#e8c020'; g.fillRect(90, 330, 20, 40); g.fillRect(146, 330, 20, 40); g.strokeRect(90, 330, 20, 40); g.strokeRect(146, 330, 20, 40);
+  g.fillStyle = '#d63b3b'; g.fillRect(100, 220, 56, 60); g.strokeRect(100, 220, 56, 60);
+  g.fillStyle = '#fff'; g.font = 'bold 40px sans-serif'; g.textAlign = 'center'; g.fillText('1', 128, 268);
+  g.fillStyle = '#c9ccd2'; g.fillRect(40, 190, 30, 100); g.fillRect(186, 190, 30, 100); g.strokeRect(40, 190, 30, 100); g.strokeRect(186, 190, 30, 100);
+  g.fillStyle = '#d9dce2'; g.beginPath(); g.roundRect(60, 60, 136, 120, 18); g.fill(); g.stroke();        // head
+  g.fillStyle = '#222'; g.fillRect(78, 90, 100, 36);
+  g.fillStyle = '#4bf'; g.beginPath(); g.arc(104, 108, 11, 0, 7); g.arc(152, 108, 11, 0, 7); g.fill();
+  g.strokeStyle = '#222'; g.lineWidth = 4; g.beginPath(); g.moveTo(98, 150); g.lineTo(158, 150); g.stroke();
+  g.strokeStyle = '#1a1a1a'; g.lineWidth = 5; g.beginPath(); g.moveTo(128, 60); g.lineTo(128, 30); g.stroke();
+  g.fillStyle = '#d63b3b'; g.beginPath(); g.arc(128, 26, 9, 0, 7); g.fill();
+  return c;
+}
+export function drawArts() {
+  const c = cv(256, 384), g = c.getContext('2d'); g.lineWidth = 5; g.strokeStyle = '#1a1a1a'; g.lineJoin = 'round';
+  g.fillStyle = '#b86a3c'; g.beginPath(); g.moveTo(88, 360); g.lineTo(92, 130); g.quadraticCurveTo(128, 70, 164, 130); g.lineTo(168, 360); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#e0a63c'; g.fillRect(90, 270, 78, 22); g.fillRect(90, 320, 78, 22);          // sock stripes
+  g.fillStyle = '#fff'; [-1, 1].forEach((sg) => { g.beginPath(); g.arc(128 + sg * 22, 140, 15, 0, 7); g.fill(); g.stroke(); });
+  g.fillStyle = '#111'; g.beginPath(); g.arc(112, 144, 6, 0, 7); g.arc(150, 138, 6, 0, 7); g.fill();
+  g.strokeStyle = '#111'; g.lineWidth = 4; g.beginPath(); g.moveTo(106, 190); g.quadraticCurveTo(128, 178, 150, 192); g.stroke();
+  g.fillStyle = '#d63b3b'; g.beginPath(); g.arc(128, 80, 16, 0, 7); g.fill();              // pom-pom hat
+  return c;
+}
+export function drawNull() {   // dithered, high-contrast cut-out of a figure in a red tee and jeans (original, generated)
+  const c = cv(256, 384), g = c.getContext('2d');
+  g.fillStyle = '#d8a88a'; g.beginPath(); g.ellipse(128, 70, 40, 50, 0, 0, 7); g.fill();       // head
+  g.fillStyle = '#111'; g.fillRect(96, 54, 20, 10); g.fillRect(140, 54, 20, 10);               // hollow eyes
+  g.fillStyle = '#400'; g.fillRect(112, 96, 32, 6);
+  g.fillStyle = '#c4161c'; g.fillRect(76, 120, 104, 120); g.fillRect(44, 124, 34, 100); g.fillRect(178, 124, 34, 100);   // red t-shirt
+  g.fillStyle = '#d8a88a'; g.fillRect(44, 224, 34, 28); g.fillRect(178, 224, 34, 28);
+  g.fillStyle = '#2d4f9c'; g.fillRect(80, 240, 46, 130); g.fillRect(130, 240, 46, 130);          // jeans
+  g.fillStyle = '#111'; g.fillRect(78, 366, 50, 14); g.fillRect(128, 366, 50, 14);
+  const d = g.getImageData(0, 0, 256, 384), px = d.data;                                      // ordered dither + specks
+  for (let y = 0; y < 384; y++) for (let x = 0; x < 256; x++) {
+    const i = (y * 256 + x) * 4; if (px[i + 3] === 0) continue;
+    const th = ((x & 3) * 4 + (y & 3) * 3) % 16 / 16 - 0.5;
+    for (let k = 0; k < 3; k++) px[i + k] = Math.round(px[i + k] / 255 * 3 + th) / 3 * 255;
+  }
+  g.putImageData(d, 0, 0);
+  g.fillStyle = '#888'; for (let i = 0; i < 160; i++) g.fillRect((Math.random() * 256) | 0, (Math.random() * 384) | 0, 2, 1 + (Math.random() * 6 | 0));
+  return c;
+}
+export function drawLoon() {
+  const c = cv(256, 384), g = c.getContext('2d'); g.lineWidth = 5; g.strokeStyle = '#300';
+  g.fillStyle = '#e02020'; g.beginPath(); g.ellipse(128, 150, 86, 110, 0, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = '#e02020'; g.beginPath(); g.moveTo(118, 258); g.lineTo(138, 258); g.lineTo(128, 274); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = '#ddd'; g.lineWidth = 3; g.beginPath(); g.moveTo(128, 274); g.quadraticCurveTo(110, 320, 132, 370); g.stroke();
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(98, 130, 18, 0, 7); g.arc(158, 130, 18, 0, 7); g.fill();
+  g.fillStyle = '#000'; g.beginPath(); g.arc(98, 134, 8, 0, 7); g.arc(158, 134, 8, 0, 7); g.fill();
+  g.fillStyle = '#400'; g.beginPath(); g.ellipse(128, 190, 28, 14, 0, 0, 7); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(88, 80, 18, 28, -0.5, 0, 7); g.fill();
+  return c;
+}
+export function drawBalloon(color, label) {
+  const c = cv(128, 192), g = c.getContext('2d'); g.lineWidth = 4; g.strokeStyle = '#222';
+  g.fillStyle = color; g.beginPath(); g.ellipse(64, 70, 50, 62, 0, 0, 7); g.fill(); g.stroke();
+  g.fillStyle = color; g.beginPath(); g.moveTo(56, 130); g.lineTo(72, 130); g.lineTo(64, 142); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = '#999'; g.lineWidth = 2; g.beginPath(); g.moveTo(64, 142); g.quadraticCurveTo(52, 165, 66, 190); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.ellipse(44, 40, 10, 18, -0.5, 0, 7); g.fill();
+  if (label != null) { g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 5; g.font = 'bold 40px sans-serif'; g.textAlign = 'center'; g.strokeText(String(label), 64, 84); g.fillText(String(label), 64, 84); }
+  return c;
+}
+export function drawThrowable(kind) {
+  const c = cv(128, 128), g = c.getContext('2d'); g.lineWidth = 4; g.strokeStyle = '#1a1a1a'; g.lineJoin = 'round';
+  if (kind === 'chair') { g.fillStyle = '#b9854c'; g.fillRect(34, 20, 12, 60); g.fillRect(34, 60, 60, 12); g.fillRect(34, 72, 10, 40); g.fillRect(84, 72, 10, 40); g.strokeRect(34, 20, 12, 60); g.strokeRect(34, 60, 60, 12); }
+  else if (kind === 'desk') { g.fillStyle = '#c4935a'; g.fillRect(16, 40, 96, 16); g.fillRect(24, 56, 10, 56); g.fillRect(94, 56, 10, 56); g.strokeRect(16, 40, 96, 16); }
+  else if (kind === 'tree') { g.fillStyle = '#9a5a2a'; g.fillRect(44, 70, 40, 44); g.strokeRect(44, 70, 40, 44); g.fillStyle = '#3a9a46'; g.beginPath(); g.arc(64, 48, 30, 0, 7); g.fill(); g.stroke(); }
+  else { g.fillStyle = '#ffd400'; g.beginPath(); g.moveTo(30, 90); g.quadraticCurveTo(64, 120, 100, 40); g.lineTo(88, 34); g.quadraticCurveTo(70, 90, 36, 76); g.closePath(); g.fill(); g.stroke(); }
+  return c;
+}
+export function drawMachine(text) {   // Demo-style Math Machine panel
+  const c = cv(256, 192), g = c.getContext('2d'); g.fillStyle = '#3a5a7a'; g.fillRect(0, 0, 256, 192);
+  g.fillStyle = '#111'; g.fillRect(12, 12, 232, 96); g.fillStyle = '#6f6'; g.font = 'bold 34px monospace'; g.textAlign = 'center'; g.fillText(text, 128, 70);
+  g.fillStyle = '#e8c020'; g.fillRect(40, 126, 176, 40); g.fillStyle = '#222'; g.font = 'bold 18px sans-serif'; g.fillText('MATH MACHINE', 128, 153);
+  return c;
+}
+export function withPartyHat(src, x = 128, y = 40) {
+  const c = cv(src.width, src.height), g = c.getContext('2d'); g.drawImage(src, 0, 0);
+  g.fillStyle = '#ff4fa3'; g.strokeStyle = '#222'; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 28, y + 20); g.lineTo(x, y - 46); g.lineTo(x + 28, y + 20); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#ffe14a'; g.beginPath(); g.arc(x, y - 46, 7, 0, 7); g.fill();
+  return c;
+}
+export function drawCake(candlesLit) {
+  const c = cv(256, 220), g = c.getContext('2d'); g.lineWidth = 4; g.strokeStyle = '#222';
+  g.fillStyle = '#f4a7c8'; g.fillRect(30, 110, 196, 90); g.strokeRect(30, 110, 196, 90);
+  g.fillStyle = '#fff'; g.fillRect(30, 110, 196, 22); g.strokeRect(30, 110, 196, 22);
+  for (let i = 0; i < 5; i++) { const x = 56 + i * 36; g.fillStyle = ['#4bf', '#fd4', '#6c6', '#e8a', '#f84'][i]; g.fillRect(x, 70, 10, 40); g.strokeRect(x, 70, 10, 40);
+    if (i < candlesLit) { g.fillStyle = '#ffd24a'; g.beginPath(); g.ellipse(x + 5, 58, 7, 13, 0, 0, 7); g.fill(); g.fillStyle = '#f84'; g.beginPath(); g.ellipse(x + 5, 62, 3, 6, 0, 0, 7); g.fill(); } }
+  return c;
+}
+
+// ---------- JD: a deliberately crude low-poly 3D model ----------
+export function makeJD() {
+  const mat = (col) => new THREE.MeshBasicMaterial({ color: col });
+  const face = (mood) => {
+    const c = cv(128, 128), g = c.getContext('2d'); g.fillStyle = '#f0bd8a'; g.fillRect(0, 0, 128, 128);
+    const angry = mood === 'angry';
+    [-1, 1].forEach((sg) => { g.fillStyle = '#fff'; g.fillRect(64 + sg * 26 - 13, 38, 26, 30); g.strokeStyle = '#111'; g.lineWidth = 3; g.strokeRect(64 + sg * 26 - 13, 38, 26, 30);
+      g.fillStyle = '#111'; g.fillRect(64 + sg * 26 - 5, 48, 10, 12);
+      if (angry) { g.lineWidth = 7; g.beginPath(); g.moveTo(64 + sg * 44, 30); g.lineTo(64 + sg * 8, 44); g.stroke(); } });
+    g.fillStyle = angry ? '#500' : '#a33'; g.fillRect(36, 86, 56, angry ? 30 : 14); g.fillStyle = '#fff'; g.fillRect(40, 86, 48, 8);
+    return toTex(c);
+  };
+  const faces = { happy: face('happy'), angry: face('angry') };
+  const group = new THREE.Group();
+  const skin = mat(0xf0bd8a);
+  const headMats = [skin, skin, skin, skin, new THREE.MeshBasicMaterial({ map: faces.happy }), skin];  // +z is the face
+  const head = new THREE.Mesh(new THREE.BoxGeometry(2.8, 3, 2.8), headMats); head.position.y = 7.3; group.add(head);
+  [-1, 1].forEach((sg) => { const e = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1, 0.6), skin); e.position.set(sg * 1.5, 7.3, 0); group.add(e); });
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(3.4, 3.6, 2), mat(0x3a9a46)); torso.position.y = 4.1; group.add(torso);
+  const tie = new THREE.Mesh(new THREE.BoxGeometry(0.7, 2.6, 0.1), mat(0xe2402a)); tie.position.set(0, 4.3, 1.06); group.add(tie);
+  const legs = [-1, 1].map((sg) => { const l = new THREE.Mesh(new THREE.BoxGeometry(1.3, 3, 1.4), mat(0x5a3a22)); l.position.set(sg * 0.85, 1.5, 0); group.add(l); return l; });
+  const mkArm = (sg) => { const pivot = new THREE.Group(); pivot.position.set(sg * 2.2, 5.6, 0); const a = new THREE.Mesh(new THREE.BoxGeometry(1, 3.2, 1), mat(0x3a9a46)); a.position.y = -1.5; pivot.add(a); group.add(pivot); return pivot; };
+  const armL = mkArm(-1), armR = mkArm(1);
+  const ruler = new THREE.Mesh(new THREE.BoxGeometry(0.35, 4.6, 0.8), mat(0xe8c04a)); ruler.position.set(0, -3.6, 1); armR.add(ruler);
+  armR.rotation.x = -1.2;
+  const hat = new THREE.Mesh(new THREE.ConeGeometry(1.1, 2.4, 5), mat(0xff4fa3)); hat.position.y = 9.9; hat.visible = false; group.add(hat);
+  group.userData = { hat, faces, head, armR, armL, legs, setMood(m) { headMats[4].map = faces[m]; headMats[4].needsUpdate = true; }, slap() { this.slapT = 0.18; } };
+  return group;
+}
+
+export function drawPartyHatSprite() {
+  const c = cv(96, 112), g = c.getContext('2d'); g.fillStyle = '#ff4fa3'; g.strokeStyle = '#222'; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(10, 104); g.lineTo(48, 14); g.lineTo(86, 104); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = '#ffe14a'; g.fillRect(24, 66, 48, 10); g.beginPath(); g.arc(48, 12, 9, 0, 7); g.fill(); g.stroke();
+  return c;
 }
