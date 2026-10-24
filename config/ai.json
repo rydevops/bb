@@ -1,0 +1,20 @@
+{
+  "_doc": "Tuning values for JD (spec section 3). Starting points for playtesting; edit freely, no code changes needed.",
+  "slapGapByNotebooks": [3.0, 2.5, 2.25, 2.0, 1.75, 1.5, 1.25, 1.0],
+  "minGap": 0.5,
+  "angerPerProblem": [0.135, 0.27, 0.405],
+  "angerDecayPerSec": 0.2,
+  "burstFraction": 0.4,
+  "walkSpeed": 12.5,
+  "runSpeed": 17.5,
+  "walkGapIndex": 4,
+  "padPausesWorld": true,
+  "gateOpensAtNotebook": 2,
+  "calmAfterMathMachineSec": 5,
+  "deafSecondsTape": 30,
+  "noisePriority": { "detention": 5, "alarm": 4, "exit": 3, "wrong": 2, "door": 1, "footstep": 0 },
+  "hearingRadius": { "door": 90, "footstep": 22 },
+  "nullSpeedBonusTiles": 2,
+  "nullStartNotebooks": 2,
+  "endless": { "secondsPerLevel": 40, "calmPerNotebook": 0.25, "calmDecayPerSec": 0.04, "maxCalm": 1.0 }
+}

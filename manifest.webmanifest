@@ -1,17 +1,19 @@
 {
-  "name": "Baldi's Basics 3D",
-  "short_name": "Baldi 3D",
-  "description": "A 3D fan-made clone of Baldi's Basics Classic Remastered. Collect 7 notebooks and escape.",
-  "start_url": "./index.html",
+  "id": "jd-basics",
+  "name": "JD's Basics Classic Remastered",
+  "short_name": "JD's Basics",
+  "description": "A stealth-horror parody of 90s edutainment.",
+  "start_url": "./?source=pwa",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "display_override": ["fullscreen", "standalone"],
   "orientation": "landscape",
-  "background_color": "#1c3d2a",
-  "theme_color": "#1c3d2a",
+  "background_color": "#101010",
+  "theme_color": "#101010",
+  "categories": ["games"],
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

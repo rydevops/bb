@@ -1,0 +1,9 @@
+{
+  "name": "jd-basics",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/ai.test.mjs && node tests/budget.test.mjs",
+    "serve": "python3 -m http.server 8000"
+  }
+}

@@ -18,8 +18,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests (JD speed table, precache budgets)
+        run: npm test
       - name: Stamp service worker with commit SHA
-        run: sed -i "s/^const CACHE = .*/const CACHE = 'bb3d-${GITHUB_SHA::8}';/" sw.js
+        shell: bash
+        run: sed -i "s/^const CACHE = .*/const CACHE = 'jd-${GITHUB_SHA::8}';/" sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

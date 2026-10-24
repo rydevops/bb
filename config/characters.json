@@ -1,0 +1,11 @@
+{
+  "_doc": "Timers and speeds for the school's other characters (spec section 3).",
+  "principal": { "speed": 9, "chaseSpeed": 14, "detentionSec": 18, "loseSightSec": 3, "warnSec": 0.9, "cooldownSec": 30 },
+  "playtime": { "jumpsNeeded": 5, "markerStartSpeed": 0.7, "markerSpeedPerHit": 0.08, "zone": [0.275, 0.725], "chaseSpeed": 7, "seeRange": 35, "cooldownSec": 25 },
+  "bully": { "firstAppearSecAfterWrong": 90, "respawnSec": 90 },
+  "sweep": { "wakeMinSec": 120, "wakeMaxSec": 180, "speed": 30, "restMinSec": 35, "restMaxSec": 70 },
+  "firstPrize": { "speed": 16, "seeRange": 45, "pushDistance": 22, "wakesAtNotebook": 2 },
+  "arts": { "runSpeed": 18, "vanishSec": 6, "respawnSec": 30, "stareSec": 3 },
+  "hard": { "speedMul": 1.3 },
+  "boss": { "hitsToWin": 10, "baseSpeedMul": 1.0, "speedPerHit": 0.1 }
+}
