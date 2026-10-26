@@ -1,0 +1,13 @@
+{
+  "_doc": "Lesson-B Teacher tuning (Project LESSON-B spec, sections 8 and 17.4). Speeds are in spec units (1 tile = 10 u); the game scales them to its own map.",
+  "mode": "rhythm",
+  "baseSpeed": 4.0, "speedPerNotebook": 1.6, "speedPerAnger": 1.2,
+  "minSpeed": 4.0, "maxSpeed": 24.0,
+  "baseWait": 2.6, "waitPerNotebook": 0.2, "waitPerAnger": 0.1, "minWait": 0.9,
+  "burstDuration": 0.45,
+  "angerPerWrong": 1.0, "angerPerCorrect": -0.15,
+  "angerDecayPerSecond": 0.02, "angerDecayAfterUnseen": 10, "angerCap": 6.0,
+  "catchRadius": 4.0, "sightRange": 120, "sightFovDeg": 110, "chaseBurstBonus": 0.10,
+  "angryIdleSeconds": 2.0, "disorientedSeconds": 12, "knockbackSeconds": 0.4,
+  "escape": { "angerBonus": 1.0, "waitMultiplier": 0.9, "alarmSeconds": 6, "sweeperSpeedMul": 1.25 }
+}

@@ -7,10 +7,12 @@ import { buildWorld, cellCenter } from './world.js';
 import * as Snd from './audio.js';
 import './actors.js';
 import './modes.js';
+import { loadLB } from './lessonb.js';
+import * as LBAI from './lbai.js';
 import { initGame, startRun, update, pause, resume, padInput, applyLook } from './game.js';
 import { initUI, M, renderMenu } from './ui.js';
 
-const BUILD = 'v10.2-bsoda';
+const BUILD = 'v11-lessonb';
 const canvas = $('view');
 let failures = 0, R = null, last = performance.now(), menuYaw = 0, lastOpts = null, wakeLock = null;
 const keys = {}, stick = { x: 0, y: 0, cx: 0, cy: 0 };
@@ -40,19 +42,21 @@ function dropWake() { try { wakeLock?.release(); } catch (e) {} wakeLock = null;
 G.hooks.onPause = dropWake; G.hooks.onResume = takeWake; G.hooks.onOver = () => { dropWake(); setTimeout(() => G.hooks.afterMenu?.(), 1500); };
 
 // ------------------------------------------------------------------ flow
-function hideRunUI() { ['hud', 'touch', 'math', 'play', 'scene', 'candle', 'scare', 'pause', 'over'].forEach((id) => $(id).classList.add('hidden')); $('hud').classList.remove('hud-off'); }
-function start(style, run, fun) {
+function hideRunUI() { $('clock').style.display = 'none'; ['hud', 'touch', 'math', 'play', 'scene', 'candle', 'scare', 'pause', 'over'].forEach((id) => $(id).classList.add('hidden')); $('hud').classList.remove('hud-off'); }
+function start(style, run, fun, retrySeed) {
   if ((style === 'null' || style === 'glitch') && !sessionStorage.getItem('jd-flash-ok')) {
     if (!confirm('Photosensitivity notice: this style uses dimming lights, distortion and loud sounds. Turn on Reduce Flashing in Settings if you are sensitive. Continue?')) return;
     try { sessionStorage.setItem('jd-flash-ok', '1'); } catch (e) {}
   }
-  Snd.init(); Snd.resume(); lastOpts = { style, run, fun: { ...fun } };
+  const seed = style === 'lessonb' ? (retrySeed || M.lb.seed || LBAI.randSeed()) : 0;
+  if (style === 'lessonb') G.lbOpts = { diff: M.lb.diff, seed, mode: run };
+  Snd.init(); Snd.resume(); lastOpts = { style, run, fun: { ...fun }, seed, diff: M.lb.diff };
   G.hooks.show(null); hideRunUI(); $('hud').classList.remove('hidden'); if (isTouch) $('touch').classList.remove('hidden');
   Snd.music.stop(); G.musicWant = null;
   startRun(style, run, fun); applySettings();
   S.mode = 'play'; G.musicHold = 8; Snd.music.play('menuConfirm'); G.musicWant = 'menuConfirm';
   if (style === 'null' || style === 'glitch') { G.musicHold = 0; Snd.music.stop(); G.musicWant = null; }
-  const intro = { classic: 'Find the <b>7 notebooks</b> in the classrooms. JD hears every noise…', party: "It's a party! Presents hide your items. Find the <b>7 notebooks</b>.", demo: 'Demo Style: feed the Math Machines <b>balloons</b> to get notebooks.', null: 'Quiet. Collect the notebooks. Make no sound.', glitch: 'Something is off in the school…' }[style];
+  const intro = { classic: 'Find the <b>7 notebooks</b> in the classrooms. JD hears every noise…', party: "It's a party! Presents hide your items. Find the <b>7 notebooks</b>.", demo: 'Demo Style: feed the Math Machines <b>balloons</b> to get notebooks.', null: 'Quiet. Collect the notebooks. Make no sound.', lessonb: 'Lesson-B: listen for the ruler slaps. Notebook 1 ends with an impossible problem…', glitch: 'Something is off in the school…' }[style];
   G.say(run === 'endless' ? 'Endless: collect as many notebooks as you can!' : run === 'free' ? 'Free Run: explore. There is no JD.' : intro, 5000);
   if (!isTouch) G.lockPointer(); else { try { document.documentElement.requestFullscreen?.()?.catch?.(() => {}); } catch (e) {} }
   try { screen.orientation?.lock?.('landscape')?.catch?.(() => {}); } catch (e) {}
@@ -60,7 +64,7 @@ function start(style, run, fun) {
 }
 function exitToMenu() {
   Snd.music.stop(); Snd.ambienceStop(); Snd.sfx.alarmStop(); Snd.sfx.staticLoopStop(); document.exitPointerLock?.(); dropWake();
-  S.mode = 'menu'; G.sceneCue = null; G.musicWant = null; hideRunUI(); G.clearNotebooks(); G.actors.hideAll?.();
+  G.lb?.cleanup?.(); S.mode = 'menu'; G.sceneCue = null; G.musicWant = null; hideRunUI(); G.clearNotebooks(); G.actors.hideAll?.();
   G.R.uniforms.glitch.value = 0; G.R.uniforms.hue.value = 0; G.R.uniforms.invert.value = 0; if (G.world) { G.world.wallMesh.rotation.set(0, 0, 0); applyLook(); }
   G.camera.rotation.z = 0; renderMenu(); G.hooks.show('menu'); if (Snd.isReady()) Snd.music.play('menuOpener'); checkOrientation(); G.hooks.afterMenu?.();
 }
@@ -156,7 +160,7 @@ $('quitYes').onclick = () => { $('quitConfirm').classList.add('hidden'); exitToM
 $('quitYes').addEventListener('pointerenter', () => {   // Null punishes quitting after a notebook, exactly like being caught
   if ((S.style === 'null' || S.style === 'glitch') && S.notebooks > 0 && S.mode === 'paused') { $('pause').classList.add('hidden'); $('quitConfirm').classList.add('hidden'); S.mode = 'play'; Snd.resume(); G.caught('null'); }
 });
-$('retryBtn').onclick = () => lastOpts && start(lastOpts.style, lastOpts.run, lastOpts.fun);
+$('retryBtn').onclick = () => { if (!lastOpts) return; if (lastOpts.style === 'lessonb') M.lb.diff = lastOpts.diff; start(lastOpts.style, lastOpts.run, lastOpts.fun, lastOpts.seed); };
 $('menuBtn').onclick = () => exitToMenu();
 
 // ------------------------------------------------------------------ main loop
@@ -207,7 +211,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 // ------------------------------------------------------------------ boot
 async function boot() {
   try {
-    await loadConfig(); await Save.load();
+    await loadConfig(); await Save.load(); await loadLB();
     R = createRenderer(canvas); initGame(R);
     G.worlds[false] = buildWorld(R.scene, false); G.world = G.worlds[false]; G.root = G.world.root; applyLook();
     G.world.exitDoors.forEach((d) => { d.mesh.visible = true; });
@@ -229,6 +233,6 @@ function enterMenu() {
   if (isStandalone()) $('installBtn').classList.add('hidden');
   checkOrientation();
 }
-window.__game = { G, S, P, Save, cfg, BUILD, start, exitToMenu, update };
+window.__game = { G, S, P, Save, cfg, BUILD, start, exitToMenu, update, M };
 $('bootMsg').textContent = 'Loading… ' + BUILD;
 boot();

@@ -20,7 +20,7 @@ export const S = {
   notebooks: 0, correct: 0, wrong: 0, stamina: 100, boost: 0, items: [null, null, null], sel: 0,
   time: 0, detention: 0, exitsOpen: false, exitsReached: 0, firstWrongT: null, hostile: false,
   carry: null, deafT: 0, silentDoorsT: 0, calmT: 0, staticT: 0, map: false, paused: false,
-  endlessScore: 0, event: null, eventT: 0, nextEventT: 0, caught: false, bossHits: 0, phase: 'main', behind: false,
+  endlessScore: 0, staMax: 100, staDrain: 0, staRegen: 0, staResume: 0, staDelay: 0, staDelayT: 0, doorHold: 0, runMul: 0, frozenT: 0, event: null, eventT: 0, nextEventT: 0, caught: false, bossHits: 0, phase: 'main', behind: false,
 };
 export const P = { x: 0, z: 0, yaw: 0, pitch: 0, vx: 0, vz: 0, r: 1.5, bob: 0, running: false, moving: false, exhausted: false, boots: 0, shoveX: 0, shoveZ: 0, y: 0, lastStep: 0 };
 export const input = { mx: 0, mz: 0, run: false, act: false, use: false, behind: false };

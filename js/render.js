@@ -7,7 +7,7 @@ const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(positi
 const FRAG = `
 precision highp float;
 uniform sampler2D tDiffuse; uniform vec2 res; uniform float levels; uniform float dither;
-uniform vec3 tint; uniform float tintAmt; uniform float bright; uniform float hue; uniform float glitch; uniform float time; uniform float vignette; uniform float invert;
+uniform vec3 tint; uniform float tintAmt; uniform float bright; uniform float hue; uniform float glitch; uniform float time; uniform float vignette; uniform float invert; uniform float sat;
 varying vec2 vUv;
 float bayer(vec2 p){
   vec2 q = mod(floor(p), 4.0);
@@ -27,6 +27,7 @@ void main(){
   }
   vec3 c = texture2D(tDiffuse, uv).rgb;
   if (hue != 0.0) c = hueRot(c, hue);
+  c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, sat);
   c = mix(c, c * tint, tintAmt) * bright;
   if (invert > 0.5) c = 1.0 - c;
   float v = 1.0 - vignette * smoothstep(0.35, 0.95, length(vUv - 0.5) * 1.35);
@@ -48,7 +49,7 @@ export function createRenderer(canvas) {
   let rt = null;
   const uniforms = {
     tDiffuse: { value: null }, res: { value: new THREE.Vector2(427, 240) }, levels: { value: 8 }, dither: { value: 1 },
-    tint: { value: new THREE.Color(1.35, 0.55, 0.55) }, tintAmt: { value: 0 }, bright: { value: 1 }, hue: { value: 0 }, glitch: { value: 0 }, time: { value: 0 }, vignette: { value: 0 }, invert: { value: 0 },
+    tint: { value: new THREE.Color(1.35, 0.55, 0.55) }, tintAmt: { value: 0 }, bright: { value: 1 }, hue: { value: 0 }, glitch: { value: 0 }, time: { value: 0 }, vignette: { value: 0 }, invert: { value: 0 }, sat: { value: 1 },
   };
   const post = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms, vertexShader: VERT, fragmentShader: FRAG, depthTest: false, depthWrite: false }));
   const postScene = new THREE.Scene(); postScene.add(post);

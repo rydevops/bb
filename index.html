@@ -20,6 +20,7 @@
 
 <div id="hud" class="hidden">
   <div id="nbCount">Notebooks <b>0/7</b></div>
+  <div id="clock"></div>
   <div id="staWrap"><div id="staBar"></div></div>
   <div id="slots"></div>
   <div id="crosshair"></div>
@@ -91,9 +92,10 @@
     <div class="cols">
       <div class="col"><h3>Style</h3><div id="styleBtns" class="stack"></div></div>
       <div class="col"><h3>Mode</h3><div id="modeBtns" class="stack"></div></div>
-      <div class="col"><h3>Fun Settings</h3><div id="funBtns" class="stack"></div></div>
+      <div class="col"><h3 id="funTitle">Fun Settings</h3><div id="funBtns" class="stack"></div></div>
     </div>
     <div id="menuHint">Collect 7 notebooks, then escape.</div>
+    <div id="lbRow" class="hidden"><span id="lbInfo"></span><div class="lbInputs"><input id="lbSeed" inputmode="numeric" maxlength="6" placeholder="Seed (random)"><button id="lbDice" aria-label="Random seed">🎲</button><input id="lbCode" placeholder="Share code"><button id="lbUseCode">Load</button></div></div>
     <div class="btnrow menuBottom">
       <button id="trophyBtn">🏆 Trophies</button><button id="helpBtn">? Help</button>
       <button id="startBtn" class="big">PLAY</button>
@@ -119,6 +121,9 @@
         <label class="check"><input type="checkbox" id="sSubs"> Subtitles</label>
         <label class="check"><input type="checkbox" id="sHaptics"> Vibration</label>
         <label class="check"><input type="checkbox" id="sContrast"> High-contrast HUD</label>
+        <label class="check"><input type="checkbox" id="sTimer"> Show timer (Lesson-B)</label>
+        <label class="check"><input type="checkbox" id="sAssist"> Easier rope game (Lesson-B)</label>
+        <label>Jump-scare <select id="sScare"><option value="normal">Normal</option><option value="low">Low</option><option value="off">Off (no flashes)</option></select></label>
       </div>
     </div>
     <div id="storageNote" class="fine"></div>

@@ -1,0 +1,13 @@
+{
+  "variantId": "b",
+  "displayName": "Lesson-B (placeholder -B values)",
+  "_doc": "The -B variant layer (spec section 20). Everything that makes -B different from the base game goes here; no code changes needed. Fill in the confirmed -B values.",
+  "notebooks": { "total": 7 },
+  "teacher": { "mode": "rhythm" },
+  "chars": {
+    "enabled": ["principal", "bully", "sweeper", "rope", "hugbot", "crafter"],
+    "custom": []
+  },
+  "items": { "enabled": ["zest", "lock", "keys", "fizz", "quarter", "alarm", "tape", "scissors", "oil", "map"], "overrides": {} },
+  "detention": { "base": 15, "perPrior": 10, "cap": 60 }
+}

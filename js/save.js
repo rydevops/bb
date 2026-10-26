@@ -3,16 +3,16 @@
 export const SCHEMA = 1;
 const reduceMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const defaults = () => ({
-  settings: { musicVol: 0.8, sfxVol: 0.9, voiceVol: 1, sens: 1, lefty: false, quality: '240', reduceFlashing: reduceMotion, subtitles: true, haptics: true, hiContrast: false, seenWarning: false, seenIosCard: false },
+  settings: { musicVol: 0.8, sfxVol: 0.9, voiceVol: 1, sens: 1, lefty: false, quality: '240', reduceFlashing: reduceMotion, subtitles: true, haptics: true, hiContrast: false, scare: 'normal', showTimer: true, assistRope: false, seenWarning: false, seenIosCard: false },
   progress: {
     schema: SCHEMA,
     beaten: { classic: false, party: false, demo: false },
     unlockedFun: { mirror: false, lights: false, hard: false },
     met: { classic: false, party: false, demo: false },
     secrets: { allWrong: false, partySong: false, glitchedSchool: false },
-    nullStyleUnlocked: false, nullDefeated: false, glitchBeaten: false, debugUnlocked: false,
+    nullStyleUnlocked: true, nullDefeated: false, glitchBeaten: false, debugUnlocked: false,
   },
-  scores: { endless: { classic: 0, party: 0, demo: 0 }, bestTime: { classic: null, party: null, demo: null } },
+  scores: { endless: { classic: 0, party: 0, demo: 0 }, bestTime: { classic: null, party: null, demo: null }, lessonb: { best: {}, wins: 0, seeds: [] } },
   achievements: {},
 });
 const STORES = ['settings', 'progress', 'scores', 'achievements'];
@@ -51,6 +51,7 @@ export const Save = {
     const d = defaults();
     if (loaded) for (const s of STORES) if (loaded[s]) d[s] = loaded[s];
     this.data = migrate(deepFill(d, defaults()));
+    this.data.progress.nullStyleUnlocked = true;   // Null Style is available from the start
     try { this.persistent = !!(await navigator.storage?.persist?.()); } catch (_) {}
     return this.data;
   },
@@ -65,7 +66,7 @@ export const Save = {
   importJSON(text) {
     const o = JSON.parse(text);
     if (o.app !== 'jd-basics' || !o.data) throw new Error('Not a JD\'s Basics save file');
-    this.data = migrate(deepFill(o.data, defaults())); this.save();
+    this.data = migrate(deepFill(o.data, defaults())); this.data.progress.nullStyleUnlocked = true; this.save();
   },
   resetProgress() { const d = defaults(); this.data.progress = d.progress; this.data.scores = d.scores; this.data.achievements = d.achievements; this.save(); },
   get settings() { return this.data.settings; },
@@ -89,6 +90,11 @@ export const ACHIEVEMENTS = [
   ['met_null', 'Is Someone There?', 'Meet Null in all three styles'],
   ['beat_null', 'Null and Void', 'Defeat Null'],
   ['beat_glitch', 'Glitch in the System', 'Beat Glitch Style'],
+  ['lb_win', 'Passing Grade', 'Escape Lesson-B (the -B mod)'],
+  ['lb_flawless', 'Flawless Notebook', 'Lesson-B: answer all 3 problems of notebook 7 correctly'],
+  ['lb_ghost', 'Ghost', 'Lesson-B: escape without using any item'],
+  ['lb_quiet', 'Quiet Feet', 'Lesson-B: escape without running in the Teacher\'s sight'],
+  ['lb_close', 'Close Shave', 'Lesson-B: escape with the Teacher right behind you'],
 ];
 export function unlockAchievement(id) {
   if (Save.data.achievements[id]) return false;

@@ -154,3 +154,18 @@ label select{font:inherit;background:#123;color:#fff;border:2px solid #0d2a18;pa
   .card ul,.card ol{font-size:.72rem;line-height:1.25}.card p{font-size:.74rem}
   .screen{padding:4px 8px}
 }
+
+/* Lesson-B */
+#clock{position:absolute;top:calc(64px + env(safe-area-inset-top));left:calc(12px + env(safe-area-inset-left));background:rgba(0,0,0,.6);padding:2px 8px;border-radius:6px;font-size:.85rem;display:none}
+#staBar.mid{background:linear-gradient(#f2d34a,#c9a227)}
+#overMsg{white-space:pre-line;line-height:1.4}
+#scare.calm canvas{animation:none}
+#lbRow{margin:6px 0 0;font-size:.74rem;color:#cfe}
+#lbRow .lbInputs{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:4px;flex-wrap:wrap}
+#lbRow input{font:inherit;background:#0b1c14;color:#fff;border:2px solid #0d2a18;border-radius:4px;padding:6px 8px;min-height:44px;width:140px;user-select:text;-webkit-user-select:text}
+#lbRow button{min-height:44px;padding:4px 10px}
+@media (max-height:380px){#lbRow{margin:2px 0 0}#lbRow input{width:120px;padding:2px 6px}#lbInfo{display:block;max-height:2.4em;overflow:hidden}}
+
+#styleBtns,#funBtns.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cols .col:first-child{flex:1.5}
+@media (max-height:380px){#styleBtns,#funBtns.grid2{gap:4px}#lbInfo{display:none}#lbRow input{min-height:40px}#lbRow button{min-height:40px}}
