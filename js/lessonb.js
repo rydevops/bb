@@ -64,7 +64,7 @@ lb.setup = () => {
   // doors: the study and the office are ordinary doors here (the Master Keys lie inside the office)
   w.doors.forEach((d) => { if (d.gate || d.label === 'OFFICE') { d.gate = false; d.locked = false; } });
   // notebooks in the 7 classroom-type rooms
-  const eligible = ['T1', 'T2', 'T3', 'B0', 'B1', 'B2', 'M1'];
+  const eligible = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'];   // the seven classrooms
   const order = eligible.map((id) => ({ id, k: run.rng.rooms() })).sort((a, b) => a.k - b.k).map((o) => o.id);
   G.nbSpare = [];
   order.slice(0, run.nbTarget).forEach((id) => { const ri = w.roomInfo.find((r) => r.id === id); if (ri) G.spawnNotebookAt(ri); });
@@ -79,9 +79,9 @@ function spawnItems() {
   const roomPoint = (ri) => ({ x: ri.cx + (rng() - 0.5) * 20, z: ri.farZ + ri.sgn * (CELL * (1.5 + rng() * 2.5)) });
   const add = (type, p) => { if (type && p && LB.enabledItems.includes(type)) G.addPickup(TO_ENGINE[type], p.x, p.z); };
   const room = (id) => w.roomInfo.find((r) => r.id === id);
-  add('zest', roomPoint(room('B1')));                                                  // Cafeteria
+  add('zest', roomPoint(room('CAF')));                                                 // Cafeteria
   const o = w.office; add('keys', { x: (o.x0 + o.x1 + 1) * CELL / 2 + 6, z: (o.z0 + 1) * CELL + 4 });   // Principal's Office
-  add('scissors', roomPoint(room('B3')));                                              // Art Room
+  add('scissors', roomPoint(room('F5')));                                              // Art Room (a faculty room)
   for (let i = 0; i < 2; i++) { const h = w.randHall(rng); add('quarter', { x: h.x + (rng() - 0.5) * 6, z: h.z + (rng() - 0.5) * 6 }); }
   for (let i = 0; i < 16; i++) { if (i % 2) { const h = w.randHall(rng); spots.push({ x: h.x + (rng() - 0.5) * 6, z: h.z + (rng() - 0.5) * 6 }); } else { const ri = w.roomInfo[Math.floor(rng() * w.roomInfo.length)]; spots.push(roomPoint(ri)); } }
   const count = Math.round(cfgI.randomCount * run.preset.itemMul), counts = {}, nbs = G.notebooksList;
@@ -95,7 +95,7 @@ function spawnItems() {
 }
 function placeDecks() {
   run.decks.forEach((d) => d.mesh.parent?.remove(d.mesh)); run.decks = [];
-  ['B1', 'M3'].forEach((id) => {
+  ['CAF', 'F4'].forEach((id) => {
     const ri = roomById(id); if (!ri) return; const c = ri.center;
     const m = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 2.5), new THREE.MeshBasicMaterial({ color: 0x333a44 })); m.position.set(c.x - 6, 1.5, c.z); G.root.add(m);
     const l = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, 0.2), new THREE.MeshBasicMaterial({ color: 0xff4a4a })); l.position.set(0, 0.7, 1.3); m.add(l);
@@ -117,10 +117,10 @@ function resetChars() {
   Object.assign(E.sweeper, { x: 0, z: 0, state: 'closet', t: cc.sweeper.wakeCheck, route: null, shoved: false, active: false }); off(E.sweeper);
   Object.assign(E.rope, { x: 0, z: 0, state: 'wander', t: 0, wps: hall(4), wi: 0, misses: 0, active: false, cool: 0, stall: 0 }); off(E.rope);
   Object.assign(E.hug, { x: 0, z: 0, state: 'idle', t: 0, active: false, stall: 0, tx: 0, tz: 0, ox: 0 }); off(E.hug);
-  const ar = roomById('B3'); Object.assign(E.crafter, { x: ar.center.x, z: ar.center.z, state: 'dormant', t: 0, lookT: 0, active: false, stall: 0 }); off(E.crafter);
+  const ar = roomById('F5'); Object.assign(E.crafter, { x: ar.center.x, z: ar.center.z, state: 'dormant', t: 0, lookT: 0, active: false, stall: 0 }); off(E.crafter);
   E.customs.forEach((c) => c.sprite.parent?.remove(c.sprite)); E.customs = [];
   LB.customChars.forEach((def) => {
-    const sp = mkSprite(A.drawArts(), 6.5); const room = roomById(def.spawn?.room) || roomById('B0');
+    const sp = mkSprite(A.drawArts(), 6.5); const room = roomById(def.spawn?.room) || roomById('C3');
     E.customs.push({ def, sprite: sp, x: room.center.x, z: room.center.z, state: 'idle', cool: 0, active: false, stall: 0 });
   });
   run.capTimer = 0;
@@ -138,16 +138,20 @@ function activate(k) {
   else if (k === 'bully') { E.bullies.forEach((b) => { if (b.enabled && !b.active) { b.active = true; b.state = 'lurk'; b.t = rnd(3, 10); } }); }
   else if (k === 'sweeper') { E.sweeper.active = true; E.sweeper.state = 'closet'; E.sweeper.t = LB.characters.sweeper.wakeCheck; }
   else if (k === 'rope') { const h = far(20 * D); Object.assign(E.rope, { x: h.x, z: h.z, active: true, state: 'wander' }); E.rope.sprite.visible = true; }
-  else if (k === 'hugbot') { const c = centerOf(rng() < 0.5 ? 'B1' : 'B2'); Object.assign(E.hug, { x: c.x + 6, z: c.z, active: true, state: 'idle' }); E.hug.sprite.visible = true; }
+  else if (k === 'hugbot') { const c = centerOf(rng() < 0.5 ? 'CAF' : 'C4'); Object.assign(E.hug, { x: c.x + 6, z: c.z, active: true, state: 'idle' }); E.hug.sprite.visible = true; }
   else if (k === 'crafter') { E.crafter.active = true; E.crafter.state = 'dormant'; E.crafter.sprite.visible = true; }
   return true;
 }
 function updateActivation(dt) {
-  run.capTimer -= dt; if (run.capTimer > 0) return; run.capTimer = 1;
-  const cap = S.notebooks >= LB.characters.capLateFrom ? LB.characters.capLate : LB.characters.capBase, E = ent;
+  run.capTimer -= dt; run.pendDt = (run.pendDt || 0) + dt; if (run.capTimer > 0) return; run.capTimer = 1; const elapsed = run.pendDt; run.pendDt = 0;
+  const cap = S.notebooks >= LB.characters.capLateFrom ? LB.characters.capLate : LB.characters.capBase, E = ent, [d0, d1] = LB.characters.activationDelay || [0, 0];
   const isOn = { principal: E.principal.active, bully: E.bullies[0].active, sweeper: E.sweeper.active, rope: E.rope.active, hugbot: E.hug.active, crafter: E.crafter.active };
+  run.pending = run.pending || {};
   for (const k of PRIORITY) {
     if (isOn[k] || S.notebooks < LB.characters[k].from) continue;
+    // characters arrive a little after their notebook count is reached instead of all at once (no cliff at one notebook)
+    if (run.pending[k] === undefined) run.pending[k] = k === 'principal' || run.cheatAll ? 0 : rnd(d0, d1);
+    run.pending[k] -= elapsed; if (run.pending[k] > 0) continue;
     if (activeCount() >= cap) break;
     activate(k);
   }
@@ -260,7 +264,7 @@ function updatePrincipal(dt) {
   const wp = pr.wps[pr.wi % pr.wps.length]; if (near(pr, wp) < 3) pr.wi++; w.followPath(pr, wp.x, wp.z, cc.speed * V, dt, false);
   if (!sees || run.mercyDet > 0) { pr.runT = 0; return; }
   if (P.running && P.moving) { pr.runT += dt; if (pr.runT >= cc.runViolation) { pr.runT = -3; violation('run'); } } else pr.runT = Math.max(0, pr.runT - dt);
-  const lounge = world().roomInfo.find((r) => r.id === 'M3'); if (lounge && inRoom(lounge.r, P)) { pr.loungeT += dt; if (pr.loungeT > 0.5) { pr.loungeT = -3; violation('lounge'); } } else pr.loungeT = Math.min(0, pr.loungeT) < 0 ? pr.loungeT + dt : 0;
+  const lounge = world().roomInfo.find((r) => r.id === 'F4'); if (lounge && inRoom(lounge.r, P)) { pr.loungeT += dt; if (pr.loungeT > 0.5) { pr.loungeT = -3; violation('lounge'); } } else pr.loungeT = Math.min(0, pr.loungeT) < 0 ? pr.loungeT + dt : 0;
 }
 
 // ------------------------------------------------------------------ Bully
@@ -295,11 +299,8 @@ function updateBullies(dt) {
 
 // ------------------------------------------------------------------ Sweeper
 function sweepRoute() {
-  const z1 = cellCenter(8), z2 = cellCenter(16), x1 = cellCenter(2), x2 = cellCenter(28), lines = [
-    { a: { x: cellCenter(1), z: z1 }, b: { x: cellCenter(29), z: z1 } }, { a: { x: cellCenter(1), z: z2 }, b: { x: cellCenter(29), z: z2 } },
-    { a: { x: x1, z: cellCenter(8) }, b: { x: x1, z: cellCenter(16) } }, { a: { x: x2, z: cellCenter(8) }, b: { x: x2, z: cellCenter(16) } },
-  ];
-  const l = lines[Math.floor(run.rng.chars() * lines.length)]; return run.rng.chars() < 0.5 ? l : { a: l.b, b: l.a };
+  const l = world().map.sweepLines[Math.floor(run.rng.chars() * world().map.sweepLines.length)], pt = ([x, z]) => ({ x: cellCenter(x), z: cellCenter(z) });
+  return run.rng.chars() < 0.5 ? { a: pt(l.a), b: pt(l.b) } : { a: pt(l.b), b: pt(l.a) };
 }
 function updateSweeper(dt) {
   const s = ent.sweeper, cc = LB.characters.sweeper; if (!s.active) return;
@@ -387,9 +388,9 @@ function updateCrafter(dt) {
   const seen = los && viewAngle(c.x, c.z) < 40 * Math.PI / 180;          // keep him in view and he never moves
   if (!seen) { w.followPath(c, P.x, P.z, cc.speed * V, dt, false); c.sc = (c.sc || 0) - dt; if (c.sc <= 0) { c.sc = 0.5; Snd.sfx.snip(); } }
   if (near(c, P) < cc.teleportAt * D && S.mode === 'play') {
-    const e = ['T0', 'M3', 'B3'].map(centerOf).filter((r) => Math.hypot(r.x - P.x, r.z - P.z) > 40).sort(() => Math.random() - 0.5)[0] || centerOf('OFFICE');
+    const e = ['JD', 'F4', 'F5'].map(centerOf).filter((r) => Math.hypot(r.x - P.x, r.z - P.z) > 40).sort(() => Math.random() - 0.5)[0] || centerOf('OFFICE');
     G.flash('#000', 1); P.x = e.x; P.z = e.z; P.vx = P.vz = 0; Snd.sfx.glitchy(); run.hits++; G.say('<b>Crafter</b> sent you somewhere else…', 2400);
-    const ar = centerOf('B3'); c.x = ar.x; c.z = ar.z; c.state = 'dormant'; c.t = cc.dormant; c.lookT = 0;
+    const ar = centerOf('F5'); c.x = ar.x; c.z = ar.z; c.state = 'dormant'; c.t = cc.dormant; c.lookT = 0;
   }
 }
 
@@ -475,13 +476,13 @@ lb.onAnswer = (ok, idx, q) => {
   else { run.wrong++; T.A = L.angerWrong(T.A, run.preset.angerPerWrong * (tp.angerPerWrong / 1.0), tp); if (q.impossible && S.notebooks === 0) T.hostile = true; }
   if (idx === 2) { if (run.notebookRight === 3 && S.notebooks >= 1) run.flawless++; if (run.notebookRight === 3 && S.notebooks + 1 === 7) run.flawless7 = true; run.notebookRight = 0; }
 };
-lb.onNotebook = () => { updateActivation(0); run.capTimer = 0; if (S.notebooks === LB.items.vending.restockAt && !run.restocked) { run.restocked = true; run.vend.forEach((v) => { v.stock = LB.items.vending.stock; }); } };
+lb.onNotebook = () => { run.capTimer = 0; if (S.notebooks === LB.items.vending.restockAt && !run.restocked) { run.restocked = true; run.vend.forEach((v) => { v.stock = LB.items.vending.stock; }); } };
 lb.onEscape = () => {
   const w = world(), T = ent.T; run.escaped = true; run.escapeT = LB.teacher.escape.alarmSeconds; run.hyper = true;
   T.A = L.angerWrong(T.A, LB.teacher.escape.angerBonus, LB.teacher); if (!run.practice) { T.hostile = true; if (T.state === 'friendly') T.state = 'hunting'; }
   S.exitsOpen = true; w.exitsOpen = true; S.phase = 'escape';
   // "the Exit": the door nearest the start; the other three stay shut
-  const start = { x: cellCenter(15), z: cellCenter(16) }; let best = 0, bd = 1e9;
+  const st0 = world().map.start, start = { x: cellCenter(st0.x), z: cellCenter(st0.z) }; let best = 0, bd = 1e9;
   w.exitPos.forEach((e, i) => { const d = Math.hypot(e.x - start.x, e.z - start.z); if (d < bd) { bd = d; best = i; } });
   w.exitDoors.forEach((d, i) => { if (i === best) { d.mesh.visible = false; d.shut = false; } else { d.shut = true; d.mesh.visible = true; } });
   run.exitIndex = best; lb.noise(P.x, P.z, 'escape'); run.noise[run.noise.length - 1].x = P.x;
@@ -491,11 +492,17 @@ lb.onEscape = () => {
 // ------------------------------------------------------------------ per-frame
 function mood(dt) {
   const U = G.R.uniforms, N = S.notebooks, reduce = Save.settings.reduceFlashing;
-  const lv = [[1, 0, [1.1, 1, 0.88], 0.5, 0], [0.9, 0.03, [1, 1, 1], 0, 0.03], [0.9, 0.03, [1, 1, 1], 0, 0.03], [0.8, 0.06, [0.9, 0.97, 1.1], 0.4, 0.06], [0.8, 0.06, [0.9, 0.97, 1.1], 0.4, 0.06], [0.7, 0.1, [1.15, 0.9, 0.9], 0.3, 0.1], [0.7, 0.1, [1.15, 0.9, 0.9], 0.3, 0.1]][Math.min(N, 6)];
-  U.sat.value = run.escaped ? 0.6 : lv[0]; U.tint.value.set(...(run.escaped ? [1.35, 0.55, 0.55] : lv[2])); U.tintAmt.value = run.escaped ? (reduce ? 0.2 : 0.2 + 0.12 * Math.sin(S.time * 4)) : lv[3];
-  const flick = run.escaped ? 0.15 : lv[4]; U.bright.value = reduce ? 1 : 1 - (Math.random() < flick * 2 ? Math.random() * flick * 2 : 0);
+  const lv = [[1, [1.1, 1, 0.88], 0.5, 0], [0.9, [1, 1, 1], 0, 0.02], [0.9, [1, 1, 1], 0, 0.02], [0.8, [0.9, 0.97, 1.1], 0.4, 0.04], [0.8, [0.9, 0.97, 1.1], 0.4, 0.04], [0.7, [1.15, 0.9, 0.9], 0.3, 0.07], [0.7, [1.15, 0.9, 0.9], 0.3, 0.07]][Math.min(N, 6)];
+  const tgt = run.escaped ? { sat: 0.6, tint: [1.35, 0.55, 0.55], amt: reduce ? 0.2 : 0.2 + 0.12 * Math.sin(S.time * 4), flick: 0.1 } : { sat: lv[0], tint: lv[1], amt: lv[2], flick: lv[3] };
+  // ease towards the target so changing notebook count never causes a sudden visual jump
+  const m = (run.mood = run.mood || { sat: 1, tint: [1.1, 1, 0.88], amt: 0.5, flick: 0 }), k = Math.min(1, dt * 0.8);
+  m.sat += (tgt.sat - m.sat) * k; m.amt += (tgt.amt - m.amt) * k; m.flick += (tgt.flick - m.flick) * k; m.tint = m.tint.map((v, i) => v + (tgt.tint[i] - v) * k);
+  U.sat.value = m.sat; U.tint.value.set(...m.tint); U.tintAmt.value = m.amt;
+  // flicker is an occasional brief dip (never per-frame strobing); more frequent as the lights fail
+  run.flickT = (run.flickT ?? 3) - dt; if (run.flickT <= 0) { run.flickDip = 0.1; run.flickT = m.flick > 0.005 ? rnd(0.4, 1.2) / (m.flick * 12 + 0.2) : 99; }
+  run.flickDip = Math.max(0, (run.flickDip || 0) - dt); U.bright.value = reduce ? 1 : (run.flickDip > 0 ? 0.88 : 1);
   const d = near(ent.T, P), danger = !run.practice && ent.T.state !== 'friendly' ? clamp(1 - d / (60 * D), 0, 1) : 0; U.vignette.value = 0.15 + danger * 0.7;
-  Snd.music.setIntensity(clamp(N / 8 + danger * 0.6 + (run.escaped ? 0.3 : 0), 0, 1));
+  run.musicI = (run.musicI ?? 0); run.musicI += (clamp(N / 8 + danger * 0.5 + (run.escaped ? 0.3 : 0), 0, 1) - run.musicI) * Math.min(1, dt * 0.5); Snd.music.setIntensity(run.musicI);
 }
 lb.update = (dt) => {
   if (!run || !LB) return; initEntities();

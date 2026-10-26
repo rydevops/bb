@@ -4,6 +4,9 @@ A free first-person stealth-horror **parody of 90s edutainment software**, built
 
 Fan-made tribute; all art, music and code are original and generated in the browser. No accounts, ads, analytics or third-party requests.
 
+## The school (all styles)
+A Classic-style schoolhouse. You start at the **south exit** and walk into a four-way hub. The **yellow swinging doors** to the west, east and north stay locked until you collect **notebook 2** (the first two classrooms are beside the hub). Beyond them a hall ring surrounds **7 classrooms, 5 faculty rooms, the Principal's office, a cafeteria and JD's room**, with **4 exits** (south start, west, east, and through the cafeteria). The map is data in `js/map.js` and is checked by `tests/map.test.mjs`. Mirror Mode flips it.
+
 ## What's in the game (spec: `JD's Basics Classic Remastered Design Document`)
 - **Styles**: Classic, Party (wrapped presents that shuffle, balloons, party hats, candle finale), Demo (Math Machines answered with balloons, random events: Gravity Chaos / Fog / Flood / broken ruler, more items), plus **Null** (unlocked by default) and **Glitch** (appears after you beat Null) styles (silent hunter, boss fight, journal ending).
 - **Modes**: Story, Endless (any style, score = notebooks), Free Run (no JD, nothing unlocks).
@@ -25,7 +28,7 @@ A separate mode, **Lesson-B**, implements *Project LESSON-B* (`-B Clone Game Spe
 - **Items**: Zest Bar, Brace Lock, Master Keys, Fizz Can, Quarter, Alarm Clock, Static Tape, Safety Scissors, Hinge Oil, Map; vending machines and tape decks.
 - Detention (15 s + 10 s per prior, cap 60), escape phase, results with rank S-D, share codes, 5 extra trophies, mood curve, danger vignette, timer, jump-scare intensity setting.
 - **Data-driven**: tuning lives in `data/lessonb/*.json`. The **-B variant layer** is `data/lessonb/variants/b.json` (notebook count, Teacher overrides, enabled characters/items, detention, and `chars.custom[]` data-only characters with `spawn`, `speed`, `senses`, `onPlayerContact` = `stun | teleport | stealItem | drainStamina | catch`). Edit that file to add the real -B differences; no code changes needed.
-- Not implemented from that spec: gamepad and key rebinding, Challenge/Endless modes, replay export, dynamic resolution, the Cruel fake exit, door-choice loop quirk. The school map is the game's existing map (rooms are assigned roles: Teacher's Study, Cafeteria, Art Room, Faculty Lounge...).
+- Not implemented from that spec: gamepad and key rebinding, Challenge/Endless modes, replay export, dynamic resolution, the Cruel fake exit, door-choice loop quirk. The school is the shared Classic-style map (rooms are assigned roles: Teacher's Study = JD's room, Cafeteria, Art Room = a faculty room, Faculty Lounge = a faculty room; the seven classrooms hold the notebooks).
 
 ## Controls
 | Action | Touch | Desktop |

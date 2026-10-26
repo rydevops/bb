@@ -2,7 +2,9 @@
 import fs from 'fs'; import assert from 'assert';
 import * as L from '../js/lbai.js';
 const rd = (f) => JSON.parse(fs.readFileSync(new URL('../data/lessonb/' + f, import.meta.url)));
-const teacher = rd('teacher.json'), tiers = rd('tiers.json');
+const teacherTuned = rd('teacher.json'), tiers = rd('tiers.json');
+// the spec's raw formulas (no pacing caps) for the section 8.3 table
+const teacher = { ...teacherTuned, speedCapByNotebooks: undefined, waitFloorByNotebooks: undefined };
 
 // 8.3 table: N, A, avgSpeed, W, distance per slap
 for (const [N, A, spd, W, d] of [[1, 1, 6.8, 2.30, 15.6], [2, 1, 8.4, 2.10, 17.6], [3, 1, 10.0, 1.90, 19.0], [4, 1, 11.6, 1.70, 19.7], [5, 1, 13.2, 1.50, 19.8], [6, 1, 14.8, 1.30, 19.2], [7, 1, 16.4, 1.10, 18.0], [7, 4, 20.0, 0.90, 18.0]]) {
@@ -14,7 +16,20 @@ for (const [N, A, spd, W, d] of [[1, 1, 6.8, 2.30, 15.6], [2, 1, 8.4, 2.10, 17.6
 }
 assert.strictEqual(L.teacherParams(0, 0, teacher).avgSpeed, 4.0);
 assert.strictEqual(L.teacherParams(7, 99, teacher).avgSpeed, 24.0, 'speed clamps at 24');
-console.log('ok  teacher speed / wait table');
+console.log('ok  teacher speed / wait table (raw spec formulas)');
+
+// pacing: with the shipped caps the Teacher ramps smoothly, however many answers are wrong
+const WALK = 10, RUN = 16; let prev = null;
+for (let N = 0; N <= 7; N++) {
+  const worst = L.teacherParams(N, teacherTuned.angerCap, teacherTuned), calm = L.teacherParams(N, 0, teacherTuned);
+  assert.ok(worst.avgSpeed <= (L.teacherParams(N, 2, teacher).avgSpeed + 1e-9), `anger cannot add more than anger=2 at N${N}`);
+  if (prev !== null) assert.ok(worst.avgSpeed - prev <= 0.2 * WALK + 1e-9, `step N${N - 1}->${N} is ${(worst.avgSpeed - prev).toFixed(2)} u/s (must be <= 0.2 x walk)`);
+  prev = worst.avgSpeed;
+  assert.ok(worst.W >= teacherTuned.waitFloorByNotebooks[N] - 1e-9 && calm.avgSpeed <= worst.avgSpeed + 1e-9);
+}
+assert.ok(L.teacherParams(3, 6, teacherTuned).avgSpeed <= 1.15 * WALK, 'at notebook 3 the Teacher is still about walking pace even with six wrong answers');
+assert.ok(L.teacherParams(6, 6, teacherTuned).avgSpeed <= RUN + 1e-9, 'by notebook 6 he matches (never beats) the run speed');
+console.log('ok  smooth pacing (no cliff after notebook 3)');
 
 // anger: wrong +1.0, correct -0.15 (floor 0), cap 6, decay only after 10 s unseen
 assert.strictEqual(L.angerWrong(0, 1, teacher), 1); assert.strictEqual(L.angerWrong(5.5, 1, teacher), 6);

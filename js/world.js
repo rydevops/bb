@@ -47,20 +47,20 @@ export function buildWorld(scene, mirror) {
   water.position.set(W * CELL / 2, 0.9, H * CELL / 2); water.visible = false; root.add(water); w.water = water;
 
   // ---- doors & exits
-  const doorMap = new Map();
+  const doorMap = new Map(), gateCells = new Map(map.gates.map((q) => [q.x + ',' + q.z, q]));
   let n = 100;
   const exitClosed = tex('exitClosed', A.exitTex);
   for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
     const c = grid[z][x];
     if (c !== 'D' && c !== 'L' && c !== 'E') continue;
-    const alongX = cellAt(x - 1, z) === '#' && cellAt(x + 1, z) === '#';
+    const gateInfo = gateCells.get(x + ',' + z), isGate = !!gateInfo;
+    const alongX = isGate ? gateInfo.alongX : cellAt(x - 1, z) === '#' && cellAt(x + 1, z) === '#';
     const geo = alongX ? new THREE.BoxGeometry(CELL, WALLH, 1.2) : new THREE.BoxGeometry(1.2, WALLH, CELL);
     const isJD = x === map.jdRoom.door[0] && z === map.jdRoom.door[1];
-    const label = c === 'L' ? 'OFFICE' : isJD ? 'JD' : String(n++);
-    const mat = new THREE.MeshBasicMaterial({ map: c === 'E' ? exitClosed : tex('door' + label + (c === 'L' || isJD), () => A.doorTex(label, c === 'L' || isJD)) });
+    const label = c === 'L' ? 'OFFICE' : isGate ? 'GATE' : isJD ? 'JD' : String(n++);
+    const mat = new THREE.MeshBasicMaterial({ map: c === 'E' ? exitClosed : isGate ? tex('gate', A.gateTex) : tex('door' + label + (c === 'L'), () => A.doorTex(label, c === 'L')) });
     const mesh = new THREE.Mesh(geo, mat); mesh.position.set(cellCenter(x), WALLH / 2, cellCenter(z)); root.add(mesh);
-    const door = { cx: x, cz: z, mesh, alongX, openAmt: 0, want: false, timer: 0, locked: c === 'L', gate: isJD, lockT: 0, silent: false, exit: c === 'E', base: mesh.position.clone(), label, key: x + ',' + z };
-    if (isJD) door.locked = true;
+    const door = { cx: x, cz: z, mesh, alongX, openAmt: 0, want: false, timer: 0, locked: c === 'L' || isGate, gate: isGate, isGate, lockT: 0, silent: false, exit: c === 'E', base: mesh.position.clone(), label, key: x + ',' + z };
     doors.push(door); doorMap.set(door.key, door);
   }
   w.doorAt = (cx, cz) => doorMap.get(cx + ',' + cz);
@@ -89,26 +89,39 @@ export function buildWorld(scene, mirror) {
   w.roomInfo = rooms.map((r, i) => {
     const doorNorth = r.door[1] < r.z0, farZ = doorNorth ? (r.z1 + 1) * CELL : r.z0 * CELL, sgn = doorNorth ? -1 : 1;
     const cx = (r.x0 + r.x1 + 1) * CELL / 2;
-    const bd = new THREE.Mesh(new THREE.PlaneGeometry(16, 6), new THREE.MeshBasicMaterial({ map: tex('board' + i, () => A.chalkboardTex(boards[i % boards.length])) }));
-    bd.position.set(cx, 5.3, farZ + sgn * 0.06); bd.rotation.y = doorNorth ? Math.PI : 0; root.add(bd);
-    addSolid(cx, farZ + sgn * 2.2, 8, 3, 3.2, deskMat);
-    const nRows = r.z1 - r.z0 + 1;
-    for (let k = 2; k < nRows; k += 2) { const z = farZ + sgn * (k - 0.5) * CELL; addSolid((r.x0 + 0.5) * CELL, z, 3.4, 3, 2.6, deskMat); addSolid((r.x1 + 0.5) * CELL, z, 3.4, 3, 2.6, deskMat); }
+    if (r.kind === 'cafeteria') {   // the cafeteria has long tables instead of a chalkboard and a teacher's desk (and a clear path to its exit)
+      const mid = (r.z0 + r.z1 + 1) * CELL / 2;
+      [-28, 28].forEach((dx) => addSolid(cx + dx, mid, 18, 3, 2.6, deskMat));
+    } else {
+      const bd = new THREE.Mesh(new THREE.PlaneGeometry(16, 6), new THREE.MeshBasicMaterial({ map: tex('board' + i, () => A.chalkboardTex(boards[i % boards.length])) }));
+      bd.position.set(cx, 5.3, farZ + sgn * 0.06); bd.rotation.y = doorNorth ? Math.PI : 0; root.add(bd);
+      addSolid(cx, farZ + sgn * 2.2, 8, 3, 3.2, deskMat);
+      const nRows = r.z1 - r.z0 + 1;
+      for (let k = 2; k < nRows; k += 2) { const z = farZ + sgn * (k - 0.5) * CELL; addSolid((r.x0 + 0.5) * CELL, z, 3.4, 3, 2.6, deskMat); addSolid((r.x1 + 0.5) * CELL, z, 3.4, 3, 2.6, deskMat); }
+    }
     return { r, id: r.id, cx, farZ, sgn, pos: new THREE.Vector3(cx, 5.2, farZ + sgn * 2.2), center: { x: cx, z: (r.z0 + r.z1 + 1) * CELL / 2 } };
   });
   addSolid((office.x0 + office.x1 + 1) * CELL / 2, (office.z1 + 1) * CELL - 3, 10, 3.5, 3.2, deskMat);
-  // ---- vending machines (BSODA)
+  // ---- vending machines (BSODA), standing against a wall of the halls
   w.vending = [];
   { const tx = tex('vend', A.vendingTex);
-    const mx = [Math.floor(W / 2)];       // centre of the long halls
-    mx.forEach((cx) => [[7 * CELL + 1.6, 1], [18 * CELL - 1.6, -1]].forEach(([zz, face]) => {
-      const x = (cx + 0.5) * CELL;
+    map.vending.forEach(({ cx, cz, face }) => {
+      const x = (cx + 0.5) * CELL, zz = face === 1 ? (cz + 1) * CELL + 1.6 : cz * CELL - 1.6;
       const mats = [0, 1, 2, 3, 4, 5].map(() => new THREE.MeshBasicMaterial({ color: 0xa8281e })); mats[face === 1 ? 4 : 5] = new THREE.MeshBasicMaterial({ map: tx });
       const m = new THREE.Mesh(new THREE.BoxGeometry(5, 7.5, 3), mats); m.position.set(x, 3.75, zz); root.add(m);
       solids.push({ x0: x - 2.5, x1: x + 2.5, z0: zz - 1.5, z1: zz + 1.5 });
       w.vending.push({ x, z: zz + face * 3, mesh: m });
-    }));
+    });
   }
+  // a rectangle that blocks a hall completely at cell (cx, cz) (used by the Bully and the boss barriers)
+  w.blockRect = (cx, cz, thick = 4) => {
+    const horiz = isHall(cx - 1, cz) && isHall(cx + 1, cz);
+    if (horiz) { let a = cz, b = cz; while (isHall(cx, a - 1)) a--; while (isHall(cx, b + 1)) b++; return { x0: (cx + 0.5) * CELL - thick / 2, x1: (cx + 0.5) * CELL + thick / 2, z0: a * CELL, z1: (b + 1) * CELL, dyn: true }; }
+    let a = cx, b = cx; while (isHall(a - 1, cz)) a--; while (isHall(b + 1, cz)) b++;
+    return { x0: a * CELL, x1: (b + 1) * CELL, z0: (cz + 0.5) * CELL - thick / 2, z1: (cz + 0.5) * CELL + thick / 2, dyn: true };
+  };
+  w.gateDoors = doors.filter((dd) => dd.gate);
+  w.openGates = () => { w.gateDoors.forEach((dd) => { dd.gate = false; dd.locked = false; dd.want = true; dd.timer = 6; }); };
 
   // ---- collision ----
   w.solidCell = (cx, cz) => {
@@ -185,7 +198,7 @@ export function buildWorld(scene, mirror) {
   w.randHall = (rand = Math.random) => { const [x, z] = w.hallCells[(rand() * w.hallCells.length) | 0]; return { x: cellCenter(x), z: cellCenter(z) }; };
   w.cellOfDoor = (door) => ({ x: cellCenter(door.cx), z: cellCenter(door.cz) });
   // exits: world position just inside each exit
-  w.exitPos = w.exitDoors.map((d) => ({ x: cellCenter(d.cx), z: cellCenter(d.cz), inner: { x: cellCenter(d.cx + (d.cx === 0 ? 2 : -2)), z: cellCenter(d.cz) } }));
+  w.exitPos = w.exitDoors.map((d) => { const vert = d.cz === 0 || d.cz === H - 1, sx = d.cx === 0 ? 2 : d.cx === W - 1 ? -2 : 0, sz = d.cz === 0 ? 2 : d.cz === H - 1 ? -2 : 0; return { x: cellCenter(d.cx), z: cellCenter(d.cz), inner: { x: cellCenter(d.cx + sx), z: cellCenter(d.cz + sz) }, vert }; });
   return w;
 }
 export { CELL, WALLH, W, H, cellCenter, toCell };

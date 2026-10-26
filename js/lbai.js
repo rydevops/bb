@@ -16,8 +16,12 @@ export function weightedPick(rng, weights, exclude = {}) {
 
 // ---- Teacher: rhythm pursuit (spec 8.3)
 export function teacherParams(N, A, t) {
-  const avgSpeed = clamp(t.baseSpeed + t.speedPerNotebook * N + t.speedPerAnger * A, t.minSpeed, t.maxSpeed);
-  const W = Math.max(t.minWait, t.baseWait - t.waitPerNotebook * N - t.waitPerAnger * A);
+  const i = clamp(Math.floor(N), 0, 7);
+  let avgSpeed = clamp(t.baseSpeed + t.speedPerNotebook * N + t.speedPerAnger * A, t.minSpeed, t.maxSpeed);
+  let W = Math.max(t.minWait, t.baseWait - t.waitPerNotebook * N - t.waitPerAnger * A);
+  // smooth pacing: a pile-up of wrong answers can never make the Teacher jump a whole notebook-tier ahead
+  if (t.speedCapByNotebooks) avgSpeed = Math.min(avgSpeed, t.speedCapByNotebooks[Math.min(i, t.speedCapByNotebooks.length - 1)]);
+  if (t.waitFloorByNotebooks) W = Math.max(W, t.waitFloorByNotebooks[Math.min(i, t.waitFloorByNotebooks.length - 1)]);
   const burstDist = avgSpeed * W;
   return { avgSpeed, W, burstDist, burstSpeed: burstDist / t.burstDuration };
 }

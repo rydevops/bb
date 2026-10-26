@@ -44,7 +44,7 @@ export function createRenderer(canvas) {
   catch (e) { renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); }
   renderer.setPixelRatio(1);
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(72, 16 / 9, 0.3, 400);
+  const camera = new THREE.PerspectiveCamera(72, 16 / 9, 0.3, 520);
   camera.rotation.order = 'YXZ';
   let rt = null;
   const uniforms = {

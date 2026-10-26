@@ -12,7 +12,7 @@ import * as LBAI from './lbai.js';
 import { initGame, startRun, update, pause, resume, padInput, applyLook } from './game.js';
 import { initUI, M, renderMenu } from './ui.js';
 
-const BUILD = 'v11-lessonb';
+const BUILD = 'v12-layout';
 const canvas = $('view');
 let failures = 0, R = null, last = performance.now(), menuYaw = 0, lastOpts = null, wakeLock = null;
 const keys = {}, stick = { x: 0, y: 0, cx: 0, cy: 0 };
@@ -56,7 +56,7 @@ function start(style, run, fun, retrySeed) {
   startRun(style, run, fun); applySettings();
   S.mode = 'play'; G.musicHold = 8; Snd.music.play('menuConfirm'); G.musicWant = 'menuConfirm';
   if (style === 'null' || style === 'glitch') { G.musicHold = 0; Snd.music.stop(); G.musicWant = null; }
-  const intro = { classic: 'Find the <b>7 notebooks</b> in the classrooms. JD hears every noise…', party: "It's a party! Presents hide your items. Find the <b>7 notebooks</b>.", demo: 'Demo Style: feed the Math Machines <b>balloons</b> to get notebooks.', null: 'Quiet. Collect the notebooks. Make no sound.', lessonb: 'Lesson-B: listen for the ruler slaps. Notebook 1 ends with an impossible problem…', glitch: 'Something is off in the school…' }[style];
+  const intro = { classic: 'Find the <b>7 notebooks</b>. The yellow swinging doors open after notebook 2. JD hears every noise…', party: "It's a party! Presents hide your items. Find the <b>7 notebooks</b>.", demo: 'Demo Style: feed the Math Machines <b>balloons</b> to get notebooks.', null: 'Quiet. Collect the notebooks. Make no sound.', lessonb: 'Lesson-B: listen for the ruler slaps. Notebook 1 ends with an impossible problem…', glitch: 'Something is off in the school…' }[style];
   G.say(run === 'endless' ? 'Endless: collect as many notebooks as you can!' : run === 'free' ? 'Free Run: explore. There is no JD.' : intro, 5000);
   if (!isTouch) G.lockPointer(); else { try { document.documentElement.requestFullscreen?.()?.catch?.(() => {}); } catch (e) {} }
   try { screen.orientation?.lock?.('landscape')?.catch?.(() => {}); } catch (e) {}
@@ -180,7 +180,7 @@ function frame(now) {
   }
   if (S.mode === 'menu' || S.mode === 'boot') menuYaw += dt * 0.12;
   const cam = G.camera, bob = Math.sin(P.bob) * 0.22 * (P.moving ? 1 : 0);
-  if (S.mode === 'menu' || S.mode === 'boot') { cam.position.set(cellCenter(15), 5, cellCenter(8)); cam.rotation.set(0, menuYaw, 0); }
+  if (S.mode === 'menu' || S.mode === 'boot') { cam.position.set(cellCenter(G.world.map.hubCam.x), 5, cellCenter(G.world.map.hubCam.z)); cam.rotation.set(0, menuYaw, 0); }
   else {
     let y = 5.2 + bob; if (S.event === 'gravity') y += 2.2 + Math.sin(S.time * 0.9) * 1.6; if (S.event === 'flood') y -= 0.4;
     cam.position.set(P.x, y, P.z); cam.rotation.set(P.pitch, P.yaw + (input.behind ? Math.PI : 0), cam.rotation.z);

@@ -61,6 +61,13 @@ export function doorTex(label, locked) {
   g.fillStyle = '#222'; g.font = 'bold 15px sans-serif'; g.textAlign = 'center'; g.fillText(label, 64, 108);
   return toTex(c, { nearest: false });
 }
+export function gateTex() {   // yellow swinging doors
+  const c = cv(128, 160), g = c.getContext('2d');
+  g.fillStyle = '#e8c020'; g.fillRect(0, 0, 128, 160); g.fillStyle = '#c9a010'; g.fillRect(0, 0, 6, 160); g.fillRect(122, 0, 6, 160); g.fillRect(61, 0, 6, 160);
+  g.fillStyle = '#9fd3e8'; g.fillRect(14, 22, 38, 44); g.fillRect(76, 22, 38, 44); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(14, 22, 12, 44); g.fillRect(76, 22, 12, 44);
+  g.fillStyle = '#8a6a08'; g.fillRect(0, 118, 128, 8); g.fillRect(0, 150, 128, 10);
+  return toTex(c, { nearest: false });
+}
 export function exitTex() {
   const c = cv(128, 160), g = c.getContext('2d');
   g.fillStyle = '#555c63'; g.fillRect(0, 0, 128, 160);
