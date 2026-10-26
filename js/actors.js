@@ -87,10 +87,7 @@ function scheduleTimers() {
 }
 actors.onNotebook = () => {
   const jd = actors.jd, w = G.world;
-  if (S.notebooks >= ai().gateOpensAtNotebook) {
-    const g = w.doorAt(w.jdRoom.door[0], w.jdRoom.door[1]);
-    if (g && g.gate) { g.gate = false; g.locked = false; if (jd.active) { Snd.sfx.slam(); say('JD\'s swinging doors burst open!', 2200); } }
-  }
+  if (S.notebooks >= ai().gateOpensAtNotebook && w.gateDoors.some((d) => d.gate)) { w.openGates(); Snd.sfx.slam(); say('The yellow swinging doors <b>burst open</b>!', 2600); }
   if (S.run === 'endless' && S.firstWrongT == null) { S.firstWrongT = S.time; scheduleTimers(); S.hostile = true; }
   if (S.hostile && !jd.active) activateJD();
   if (pendingNoise && jd.active) { G.hearNoise(pendingNoise, Infinity); pendingNoise = null; }
@@ -234,22 +231,14 @@ function updatePrincipal(dt) {
 }
 
 // ------------------------------------------------------------------ It's a Bully
-const BULLY_SPOTS = () => [
-  { x: cellCenter(2), z: cellCenter(12), r: [1 * CELL, 12 * CELL, 4 * CELL, 13 * CELL - 4] },
-  { x: cellCenter(28), z: cellCenter(12), r: [27 * CELL, 12 * CELL, 30 * CELL, 13 * CELL - 4] },
-  { x: cellCenter(10), z: cellCenter(8), r: [10 * CELL + 2, 7 * CELL, 11 * CELL + 6, 10 * CELL] },
-  { x: cellCenter(21), z: cellCenter(8), r: [21 * CELL + 2, 7 * CELL, 22 * CELL + 6, 10 * CELL] },
-  { x: cellCenter(10), z: cellCenter(16), r: [10 * CELL + 2, 15 * CELL, 11 * CELL + 6, 18 * CELL] },
-  { x: cellCenter(21), z: cellCenter(16), r: [21 * CELL + 2, 15 * CELL, 22 * CELL + 6, 18 * CELL] },
-];
 function bullyLeave(sec) { const b = actors.bully; removeBullySolid(); b.state = 'gone'; b.timer = sec; b.sprite.visible = false; Snd.sfx.poof(); }
 function updateBully(dt) {
   const b = actors.bully; b.stun = Math.max(0, b.stun - dt);
   if (b.state === 'absent' || b.state === 'gone') {
     b.timer -= dt;
     if (b.timer <= 0 && S.firstWrongT != null || (b.timer <= 0 && S.run === 'free')) {
-      const spots = BULLY_SPOTS().filter((s) => Math.hypot(s.x - P.x, s.z - P.z) > 35).sort(() => Math.random() - 0.5);
-      const s = spots[0]; if (s) { b.spot = s; b.x = s.x; b.z = s.z; b.state = 'block'; b.sprite.visible = true; b.solid = { x0: s.r[0], z0: s.r[1], x1: s.r[2], z1: s.r[3], dyn: true }; G.world.solids.push(b.solid); Snd.sfx.giggle(); }
+      let h = null; for (let i = 0; i < 40 && !h; i++) { const c = G.world.randHall(); if (Math.hypot(c.x - P.x, c.z - P.z) > 40) h = c; }
+      if (h) { b.x = h.x; b.z = h.z; b.state = 'block'; b.sprite.visible = true; b.solid = G.world.blockRect(toCell(h.x), toCell(h.z)); G.world.solids.push(b.solid); Snd.sfx.giggle(); }
     }
   }
   b.sprite.position.set(b.x, 0, b.z);
@@ -314,10 +303,8 @@ function updatePlaytime(dt) {
 
 // ------------------------------------------------------------------ Gotta Sweep (pushes everyone) and 1st Prize (pushes only the player)
 function sweepRoute() {
-  const ring = [[2, 8], [28, 8], [28, 16], [2, 16]].map(([x, z]) => ({ x: cellCenter(x), z: cellCenter(z) }));
-  const start = ri(0, 3), dir = Math.random() < 0.5 ? 1 : -1, r = [];
-  for (let i = 0; i < 9; i++) r.push(ring[((start + dir * i) % 4 + 4) % 4]);
-  return r;
+  const l = pick(G.world.map.sweepLines), pt = ([x, z]) => ({ x: cellCenter(x), z: cellCenter(z) }), a = pt(l.a), b = pt(l.b);
+  return Math.random() < 0.5 ? [a, b, a] : [b, a, b];   // sweeps its hall end to end and back
 }
 function updateSweep(dt) {
   const c = actors.sweep, sp = ch().sweep.speed * hm();

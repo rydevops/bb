@@ -1,6 +1,6 @@
 {
   "_doc": "Hallway characters (spec section 9). 'from' is the notebook count that activates each one.",
-  "capBase": 4, "capLate": 5, "capLateFrom": 5, "mercySeconds": 15, "maxChainLock": 8,
+  "capBase": 4, "capLate": 5, "capLateFrom": 5, "mercySeconds": 15, "activationDelay": [12, 40], "maxChainLock": 8,
   "principal": { "from": 0, "speed": 12, "chase": 18, "runViolation": 0.4, "detentionBase": 15, "detentionPerPrior": 10, "detentionCap": 60 },
   "bully": { "from": 1, "speed": 10, "lurkRange": 40, "approachTo": 12, "block": 6, "relocate": [45, 90], "demandWindow": 1.2 },
   "sweeper": { "from": 2, "wakeCheck": 25, "wakeChance": 0.30, "wakePerNotebook": 0.10, "telegraph": 3, "speed": 24, "shove": 40, "stun": 0.4 },

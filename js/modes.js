@@ -36,7 +36,7 @@ G.setupMode = () => {
   if (S.style === 'party') {
     const cols = ['#e84a4a', '#4aa8e8', '#f2c230', '#6ccf5a', '#d86ae8'];
     for (let i = 0; i < 16; i++) { const h = w.randHall(); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: A.spriteTex(A.drawBalloon(pick(cols))), transparent: true })); s.scale.set(2.4, 3.6, 1); s.center.set(0.5, 0); s.position.set(h.x + rnd(-6, 6), 5 + rnd(0, 2), h.z + rnd(-6, 6)); G.root.add(s); decor.push({ sprite: s, ph: rnd(0, 6), y: s.position.y }); }
-    const ri_ = w.roomInfo.find((r) => r.id === 'M3') || w.roomInfo[w.roomInfo.length - 1];
+    const ri_ = w.roomInfo.find((r) => r.id === 'F4') || w.roomInfo[w.roomInfo.length - 1];
     const m = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 0.5, 16), new THREE.MeshBasicMaterial({ color: 0x4ae8ff })); m.position.set(ri_.center.x, 0.3, ri_.center.z); G.root.add(m);
     teleporter = { mesh: m, x: ri_.center.x, z: ri_.center.z };
   }
@@ -56,7 +56,7 @@ G.setupMode = () => {
 // ------------------------------------------------------------------ Demo: Math Machines + balloons
 function setupMachines() {
   const w = G.world; G.clearNotebooks();
-  const rooms = w.roomInfo.filter((r) => r.r !== w.jdRoom).sort(() => Math.random() - 0.5).slice(0, TOTAL_NB);
+  const rooms = w.roomInfo.filter((r) => r.r.kind === 'class').sort(() => Math.random() - 0.5).slice(0, TOTAL_NB);
   rooms.forEach((ri_) => {
     const x = ri_.cx + 12, z = ri_.farZ + ri_.sgn * 3;
     const cvs = A.cv(256, 192), tex = new THREE.CanvasTexture(cvs); tex.colorSpace = THREE.SRGBColorSpace;
@@ -199,7 +199,7 @@ G.throwCarry = () => {
 // ------------------------------------------------------------------ Endless
 G.endlessCollected = () => {
   const w = G.world, used = new Set(G.notebooksList.filter((n) => !n.taken).map((n) => n.room));
-  const free = w.roomInfo.filter((r) => r.r !== w.jdRoom && !used.has(r.r)).sort(() => Math.random() - 0.5);
+  const free = w.roomInfo.filter((r) => r.r.kind === 'class' && !used.has(r.r)).sort(() => Math.random() - 0.5);
   if (free[0]) G.spawnNotebookAt(free[0]);
   G.recordEndless?.();
 };
@@ -220,7 +220,7 @@ G.nullExit = (i, d) => {
   if (S.phase === 'boss' || S.phase === 'journal') return;
   S.exitsReached++; d.shut = true; d.mesh.visible = true; d.mesh.material.color.set(0x555555);
   const e = G.world.exitPos[i]; P.x = e.inner.x; P.z = e.inner.z; P.vx = P.vz = 0;
-  if (S.exitsReached === 3) { nullc.speedMul = 1.35; nullc.goal = { x: cellCenter(15), z: cellCenter(12) }; nullc.goalT = 30; if (S.style === 'null') say('…', 1500, undefined, { force: true }); }
+  if (S.exitsReached === 3) { nullc.speedMul = 1.35; const oo = G.world.office; nullc.goal = { x: (oo.x0 + oo.x1 + 1) * CELL / 2, z: (oo.z0 + oo.z1 + 1) * CELL / 2 }; nullc.goalT = 30; if (S.style === 'null') say('…', 1500, undefined, { force: true }); }
   if (S.exitsReached >= 4 || G.world.exitDoors.every((dd) => dd.shut)) startBoss();
 };
 function startBoss() {
@@ -278,7 +278,7 @@ function finishNull() {
   if (S.style === 'null') { p.nullDefeated = true; unlockAchievement('beat_null'); p.debugUnlocked = false; }
   else { p.glitchBeaten = true; unlockAchievement('beat_glitch'); p.debugUnlocked = true; }
   Save.save(); G.applyLook(); S.phase = 'main';
-  G.win(S.style === 'null' ? '\nNull is gone… Null Style has been replaced by Glitch Style.' : '\nA secret debug code has been revealed…', S.style === 'null' ? 'NULL IS GONE' : 'GLITCH CLEARED');
+  G.win(S.style === 'null' ? '\nNull is gone… Glitch Style is now available.' : '\nA secret debug code has been revealed…', S.style === 'null' ? 'NULL IS GONE' : 'GLITCH CLEARED');
 }
 G.nullCatch = () => {
   S.mode = 'scare'; Snd.sfx.nullCatch(); const U = G.R.uniforms, reduce = Save.settings.reduceFlashing; let t = 0;

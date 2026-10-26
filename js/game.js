@@ -209,7 +209,7 @@ export function findInteract() {
   for (const p of pickups) consider(S.style === 'party' ? 'Open present' : 'Take ' + nm(p.type), () => takePickup(p), p.x, p.z, 8, { minDot: 0.45 });
   for (const d of w.doors) {
     if (d.exit) continue;
-    const label = d.gate && d.locked ? 'JD\'s door is locked' : d.locked ? (S.items.includes('keys') ? 'Unlock door' : 'Locked – needs keys') : (d.lockT > 0 ? 'Door is locked' : (d.want ? null : 'Open door'));
+    const label = d.gate && d.locked ? 'Swinging doors (locked)' : d.locked ? (S.items.includes('keys') ? 'Unlock door' : 'Locked – needs keys') : (d.lockT > 0 ? 'Door is locked' : (d.want ? null : 'Open door'));
     if (label) consider(label, () => useDoor(d), cellCenter(d.cx), cellCenter(d.cz), 11, { los: false });
   }
   if (S.style !== 'lessonb') for (const v of w.vending) consider(S.items.includes('quarter') ? 'Insert quarter' : 'Vending machine (needs a quarter)', () => useVending(v), v.x, v.z, 10, { los: false });
@@ -222,7 +222,7 @@ function takePickup(p) {
   say(S.style === 'party' ? `Unwrapped <b>${nm(p.type)}</b>!` : `Got <b>${nm(p.type)}</b>`, 1600);
 }
 function useDoor(d) {
-  if (d.gate && d.locked) { Snd.sfx.locked(); say("JD's swinging doors are locked… for now.", 2200); return; }
+  if (d.gate && d.locked) { Snd.sfx.locked(); say(S.style === 'lessonb' ? 'Locked.' : 'The yellow swinging doors stay locked until you have <b>2 notebooks</b>.', 2400); return; }
   if (d.locked) {
     const ki = S.items.indexOf('keys');
     if (ki < 0) { Snd.sfx.locked(); say("The door is locked. Find the <b>Principal's Keys</b>.", 2200); return; }
@@ -345,15 +345,16 @@ export function startRun(style, run, fun) {
   w.solids.length = w.solids.length;   // static solids stay; dynamic ones are removed below
   G.removeDynamicSolids?.();
   w.exitsOpen = false;
-  w.doors.forEach((d) => { d.want = false; d.openAmt = 0; d.lockT = 0; d.shut = false; d.silent = false; d.locked = d.exit ? false : (d.label === 'OFFICE' || d.gate); d.mesh.visible = true; });
-  const jdGate = w.doorAt(w.jdRoom.door[0], w.jdRoom.door[1]); jdGate.gate = true; jdGate.locked = true;
-  if (S.run === 'free' || nullish) { jdGate.gate = false; jdGate.locked = false; }
+  w.doors.forEach((d) => { d.want = false; d.openAmt = 0; d.lockT = 0; d.shut = false; d.silent = false; d.gate = !!d.isGate; d.locked = d.exit ? false : (d.label === 'OFFICE' || d.isGate); d.mesh.visible = true; });
+  if (S.run === 'free' || nullish || style === 'lessonb') w.gateDoors.forEach((d) => { d.gate = false; d.locked = false; });   // the swinging doors only gate the Baldi-style runs
   Snd.sfx.alarmStop(); Snd.sfx.staticLoopStop(); G.alarm = null;
   clearNotebooks(); clearPickups(); puffs.forEach((p) => G.root.remove(p.sprite)); puffs.length = 0;
-  P.x = cellCenter(15); P.z = cellCenter(16); P.yaw = 0;
+  P.x = cellCenter(w.map.start.x); P.z = cellCenter(w.map.start.z); P.yaw = 0;   // the south exit: the school's 4-way hub is straight ahead
   // notebooks: 7 random classrooms (never JD's room)
   if (style !== 'lessonb') {
-    const rooms = w.roomInfo.filter((r) => r.r !== w.jdRoom).sort(() => Math.random() - 0.5);
+    const classes = w.roomInfo.filter((r) => r.r.kind === 'class');
+    const near = classes.filter((r) => r.id === 'C1' || r.id === 'C2'), far = classes.filter((r) => r.id !== 'C1' && r.id !== 'C2').sort(() => Math.random() - 0.5);
+    const rooms = S.run === 'endless' ? [...near, ...far] : [...near, ...far].sort(() => Math.random() - 0.5);   // Endless always starts with the two classrooms beside the hub
     const count = S.run === 'endless' ? 3 : TOTAL_NB;
     rooms.slice(0, count).forEach((ri_) => spawnNotebookAt(ri_));
     G.nbSpare = rooms.slice(count);
@@ -473,20 +474,22 @@ function updateMusic() {
   if (G.sceneCue) want = G.sceneCue;
   if (want !== G.musicWant) { G.musicWant = want; if (want) Snd.music.play(want); else Snd.music.stop(); }
   const jd = G.actors.jd, dB = jd.active ? Math.hypot(P.x - jd.x, P.z - jd.z) : 999;
-  Snd.music.setIntensity(clamp(S.notebooks / 10 + (dB < 80 ? (1 - dB / 80) * 0.5 : 0) + (S.exitsOpen ? 0.2 : 0), 0, 1));
+  if (S.style !== 'lessonb') Snd.music.setIntensity(clamp(S.notebooks / 10 + (dB < 80 ? (1 - dB / 80) * 0.5 : 0) + (S.exitsOpen ? 0.2 : 0), 0, 1));   // Lesson-B eases its own intensity
 }
 
 // ------------------------------------------------------------------ minimap
 const mm = $('minimap'), mg = mm.getContext('2d');
 let mmBase = null, mmWorld = null;
 function drawMap() {
-  const w = G.world;
+  const w = G.world, T = 8;
   if (mmWorld !== w) {
-    mmWorld = w; mmBase = A.cv(W * 8, H * 8); const g = mmBase.getContext('2d');
-    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) { const c = w.grid[z][x]; g.fillStyle = c === '#' ? '#222' : c === 'D' ? '#b07a3a' : c === 'L' ? '#a33' : c === 'E' ? '#3c3' : c === 'r' ? '#6f8da0' : c === 'o' ? '#7d3a3a' : '#c9a63a'; g.fillRect(x * 8, z * 8, 8, 8); }
+    mmWorld = w; mmBase = A.cv(W * T, H * T); const g = mmBase.getContext('2d');
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) { const c = w.grid[z][x]; g.fillStyle = c === '#' ? '#222' : c === 'D' ? '#b07a3a' : c === 'L' ? '#a33' : c === 'E' ? '#3c3' : c === 'r' ? '#6f8da0' : c === 'o' ? '#7d3a3a' : '#c9a63a'; g.fillRect(x * T, z * T, T, T); }
+    mm.width = 248; mm.height = Math.round(248 * H / W);
   }
-  mg.drawImage(mmBase, 0, 0);
-  mg.save(); mg.translate(P.x / CELL * 8, P.z / CELL * 8); mg.rotate(-P.yaw);
+  mg.drawImage(mmBase, 0, 0, mm.width, mm.height);
+  const k = mm.width / (W * CELL);
+  mg.save(); mg.translate(P.x * k, P.z * k); mg.rotate(-P.yaw);
   mg.fillStyle = '#fff'; mg.beginPath(); mg.moveTo(0, -6); mg.lineTo(4, 5); mg.lineTo(-4, 5); mg.closePath(); mg.fill(); mg.strokeStyle = '#000'; mg.stroke(); mg.restore();
 }
 
