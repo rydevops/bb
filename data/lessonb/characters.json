@@ -1,0 +1,10 @@
+{
+  "_doc": "Hallway characters (spec section 9). 'from' is the notebook count that activates each one.",
+  "capBase": 4, "capLate": 5, "capLateFrom": 5, "mercySeconds": 15, "maxChainLock": 8,
+  "principal": { "from": 0, "speed": 12, "chase": 18, "runViolation": 0.4, "detentionBase": 15, "detentionPerPrior": 10, "detentionCap": 60 },
+  "bully": { "from": 1, "speed": 10, "lurkRange": 40, "approachTo": 12, "block": 6, "relocate": [45, 90], "demandWindow": 1.2 },
+  "sweeper": { "from": 2, "wakeCheck": 25, "wakeChance": 0.30, "wakePerNotebook": 0.10, "telegraph": 3, "speed": 24, "shove": 40, "stun": 0.4 },
+  "rope": { "from": 1, "speed": 8, "sight": 50, "accept": 14, "invite": 2.5, "run": 18, "rounds": 5, "cycle": 1.0, "window": 0.35, "assistWindow": 0.6, "tantrumMisses": 3, "tantrumSeconds": 20, "cooldown": 30 },
+  "hugbot": { "from": 3, "hear": 50, "alert": 0.6, "charge": 28, "overshoot": 10, "hug": 3, "recover": 20 },
+  "crafter": { "from": 2, "wakeCone": 30, "wakeSeconds": 1.0, "speed": 20, "teleportAt": 3, "dormant": 40 }
+}

@@ -1,0 +1,15 @@
+{
+  "_doc": "Notebook problems by notebook number (spec section 7.4). Types: add, sub, addsub, mul, div, two (a + b x c), impossible.",
+  "tiers": {
+    "1": { "types": ["add", "sub", "impossible"], "range": [1, 9] },
+    "2": { "types": ["add", "sub", "add"], "range": [1, 20] },
+    "3": { "types": ["addsub", "addsub", "mul"], "range": [1, 30], "mulRange": [2, 9] },
+    "4": { "types": ["mul", "addsub", "mul"], "range": [1, 30], "mulRange": [2, 12], "negatives": true },
+    "5": { "types": ["mul", "div", "addsub"], "range": [1, 30], "mulRange": [2, 12], "quotMax": 20, "negatives": true },
+    "6": { "types": ["mul", "div", "two"], "range": [2, 15], "mulRange": [2, 15], "quotMax": 20, "negatives": true },
+    "7": { "types": ["two", "div", "mul"], "range": [2, 20], "mulRange": [2, 20], "quotMax": 20, "negatives": true }
+  },
+  "impossible": [
+    "What colour is Tuesday? =", "7 ÷ 0 =", "The sound of 5 =", "∞ − ∞ + ? =", "How heavy is a Monday? =", "Square root of a banana =", "0 ÷ 0 × ? ="
+  ]
+}

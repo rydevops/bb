@@ -1,0 +1,13 @@
+{
+  "_doc": "Item catalogue and spawn weights (spec section 10).",
+  "items": {
+    "zest": "Zest Bar", "lock": "Brace Lock", "keys": "Master Keys", "fizz": "Fizz Can", "quarter": "Quarter",
+    "alarm": "Alarm Clock", "tape": "Static Tape", "scissors": "Safety Scissors", "oil": "Hinge Oil", "map": "Map"
+  },
+  "weights": { "zest": 15, "lock": 14, "fizz": 14, "quarter": 12, "alarm": 12, "oil": 10, "tape": 8, "keys": 8, "scissors": 7 },
+  "randomCount": 8, "maxSame": 2, "minDistFromNotebook": 15,
+  "zest": { "maxBonus": 0.25, "seconds": 20 }, "lock": { "seconds": 30, "breakAfterContact": 1.2 },
+  "fizz": { "coneDeg": 60, "range": 30, "push": 22, "teacherPush": 15, "teacherStall": 0.4, "hugStun": 4, "crafterStun": 3 },
+  "alarm": { "delay": 20 }, "tape": { "seconds": 12, "teacherRange": 40 }, "oil": { "seconds": 60 },
+  "vending": { "stock": 3, "cooldown": 2, "restockAt": 4 }
+}

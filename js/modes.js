@@ -46,6 +46,7 @@ G.setupMode = () => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(5, 7, 4), new THREE.MeshBasicMaterial({ color: 0xc86aa8 })); m.position.set(x, 3.5, z); G.root.add(m); shrink = { mesh: m, x, z };
     w.solids.push({ x0: x - 2.5, x1: x + 2.5, z0: z - 2, z1: z + 2, dyn: true });
   }
+  if (S.style === 'lessonb') G.lb.setup();
   if (isNullish()) {
     nullc.sprite = S.style === 'glitch' ? nullc.loonSprite : nullc.nullSprite;
     G.world.ground.material.color.set(0x303030);
@@ -171,6 +172,7 @@ G.dec = dec;
 
 // ------------------------------------------------------------------ interactions provided by modes
 G.modeInteract = (consider) => {
+  if (S.style === 'lessonb') { G.lb.interact(consider); return; }
   for (const b of balloons) if (!b.held) consider(`Take balloon ${b.value}`, () => takeBalloon(b), b.x, b.z, 12, { minDot: 0.5 });
   for (const m of machines) if (!m.done) consider(S.carry?.type === 'balloon' ? 'Feed balloon to the Math Machine' : 'Math Machine – needs a balloon', () => feedMachine(m), m.x, m.z, 14, { los: false });
   for (const t of throwables) consider(`Pick up ${t.kind}`, () => { if (S.carry) { Snd.sfx.locked(); return; } S.carry = { type: 'throw', kind: t.kind, label: t.kind, heavy: true }; G.root.remove(t.sprite); throwables.splice(throwables.indexOf(t), 1); Snd.sfx.pickup(); say(`Holding a ${t.kind}. Tap USE ITEM to throw it!`, 1600); }, t.x, t.z, 10, { minDot: 0.4 });
@@ -292,6 +294,7 @@ G.nullCatch = () => {
 
 // ------------------------------------------------------------------ per-frame
 G.updateModes = (dt) => {
+  if (S.style === 'lessonb') G.lb.update(dt);
   const w = G.world, t = S.time;
   decor.forEach((d) => { if (!d.static) d.sprite.position.y = d.y + Math.sin(t * 1.5 + d.ph) * 0.6; });
   balloons.forEach((b) => { if (!b.held) b.sprite.position.y = 4 + Math.sin(t * 2 + b.ph) * 0.5 + (S.event === 'gravity' ? 2 : 0); });

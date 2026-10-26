@@ -36,7 +36,7 @@ G.initActors = () => {
 };
 const clamp01 = (v) => clamp(v, 0, 1);
 G.resetActors = () => {
-  const w = G.world, jd = actors.jd, party = S.style === 'party', school = S.style !== 'null' && S.style !== 'glitch';
+  const w = G.world, jd = actors.jd, party = S.style === 'party', school = S.style !== 'null' && S.style !== 'glitch' && S.style !== 'lessonb';
   pendingNoise = null;
   const rc = w.jdRoom, jc = { x: (rc.x0 + rc.x1 + 1) * CELL / 2, z: (rc.z0 + rc.z1 + 1) * CELL / 2 };
   Object.assign(jd, { x: jc.x, z: jc.z, active: false, state: 'wander', target: null, hearT: 0, hearPri: -1, anger: 0, stun: 0, eat: 0, jit: 1, lastSeen: null, goal: null, breakT: 0, calm: 0, slap: new AI.Slapper(ai()) });
@@ -130,6 +130,7 @@ actors.onBsoda = (c, fx, fz) => {
   else if (c === actors.playtime && S.mode === 'playtime') endPlaytime();
 };
 G.doorUsers = () => {
+  if (S.style === 'lessonb') return G.lb.doorUsers();
   const a = actors, list = [];
   if (a.jd.active) list.push(a.jd);
   if (!actors.enabled) return list;
@@ -274,6 +275,7 @@ function startPlaytime() {
   c.state = 'game'; document.exitPointerLock?.(); G.setPrompt(null); Snd.sfx.giggle(); say('<b>Playtime</b>: "Wanna jump rope with me?!"', 2600);
 }
 actors.jumpPress = () => {
+  if (S.style === 'lessonb') { G.lb.jump(); return; }
   if (!pt.active) return; const cp = ch().playtime;
   if (pt.pos >= cp.zone[0] && pt.pos <= cp.zone[1]) {
     pt.hits++; Snd.sfx.jump(); $('playProg').textContent = `${pt.hits}/${cp.jumpsNeeded}`; $('playMsg').textContent = pick(['Yay!', 'Again!', 'Wheee!', 'Nice jump!']);

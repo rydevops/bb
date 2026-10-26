@@ -9,6 +9,7 @@ import { Save, unlockAchievement } from './save.js';
 import * as Snd from './audio.js';
 
 const ai = () => cfg.ai;
+const nm = (t) => (S.style === 'lessonb' && G.lb.names[t]) || ITEMS[t];
 const settings = () => Save.settings;
 const hud = {};
 let subTimer = 0, musicT = 0;
@@ -44,13 +45,13 @@ export function renderSlots() {
   hud.slots.innerHTML = '';
   S.items.forEach((it, i) => {
     const d = document.createElement('div'); d.className = 'slot' + (i === S.sel ? ' sel' : '');
-    if (it) { d.appendChild(A.itemIcon(it)); const t = document.createElement('span'); t.textContent = ITEMS[it]; d.appendChild(t); }
+    if (it) { d.appendChild(A.itemIcon(it)); const t = document.createElement('span'); t.textContent = nm(it); d.appendChild(t); }
     d.addEventListener('pointerdown', (e) => { e.stopPropagation(); if (S.sel !== i) { S.sel = i; Snd.sfx.select(); renderSlots(); } });
     hud.slots.appendChild(d);
   });
 }
 export function updateNb() {
-  hud.nb.innerHTML = S.run === 'endless' ? `Notebooks <b>${S.endlessScore}</b>` : `Notebooks <b>${S.notebooks}/${TOTAL_NB}</b>`;
+  hud.nb.innerHTML = S.run === 'endless' ? `Notebooks <b>${S.endlessScore}</b>` : `Notebooks <b>${S.notebooks}/${S.style === 'lessonb' && G.lb.target ? G.lb.target() : TOTAL_NB}</b>`;
 }
 G.updateNb = updateNb;
 export function giveItem(type) {
@@ -64,6 +65,7 @@ G.banner = banner;
 // ------------------------------------------------------------------ noise (JD hears everything)
 // pri: detention > alarm > exit > wrong > door > footstep. radius Infinity = heard everywhere.
 export function noise(x, z, kind, radius = Infinity, dur = 6) {
+  if (S.style === 'lessonb') { if (S.mode === 'play' || S.mode === 'playtime') G.lb.noise(x, z, kind); return; }
   if (S.mode !== 'play' && S.mode !== 'playtime' && S.mode !== 'pad') return;
   const n = { x, z, pri: ai().noisePriority[kind] ?? 0, dur, kind };
   G.hearNoise?.(n, radius);
@@ -83,7 +85,7 @@ export function openDoor(d, byPlayer) {
     const silent = S.silentDoorsT > 0 || d.silent;
     if (!silent) { const [v, p] = spatial(cellCenter(d.cx), cellCenter(d.cz), 120); Snd.sfx.door(v, p); if (byPlayer) noise(cellCenter(d.cx), cellCenter(d.cz), 'door', ai().hearingRadius.door, 5); }
   }
-  d.timer = 3.5;
+  d.timer = S.doorHold || 3.5;
 }
 G.openDoor = openDoor;
 function updateDoors(dt) {
@@ -142,6 +144,7 @@ export function useItem() {
   if (G.throwCarry?.()) return;
   const it = S.items[S.sel];
   if (!it) { say('Empty slot.', 800); return; }
+  if (S.style === 'lessonb') { if (G.lb.useItem(it)) { S.items[S.sel] = null; renderSlots(); haptic(30); G.lb.itemUsed(); } return; }
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), consume = () => { S.items[S.sel] = null; renderSlots(); haptic(30); };
   const jd = G.actors.jd;
   switch (it) {
@@ -182,7 +185,7 @@ G.useItem = useItem;
 function updateAlarm(dt) {
   const al = G.alarm; if (!al) return;
   al.t -= dt;
-  if (al.t <= 0 && al.ring === 0) { al.ring = 1; al.rt = 10; Snd.sfx.alarmStart(); }
+  if (al.t <= 0 && al.ring === 0) { al.ring = 1; al.rt = al.dur || 10; Snd.sfx.alarmStart(); }
   if (al.ring === 1) {
     al.rt -= dt; al.sprite.position.y = 1.5 + Math.abs(Math.sin(S.time * 40)) * 0.3;
     Snd.sfx.alarmVol(Math.max(0.1, spatial(al.x, al.z, 160)[0]));
@@ -203,20 +206,20 @@ export function findInteract() {
     if (d < bd) { bd = d; best = { label, fn }; }
   };
   for (const n of notebooksList) if (!n.taken) consider('Take notebook', () => takeNotebook(n), n.x, n.z, 11);
-  for (const p of pickups) consider(S.style === 'party' ? 'Open present' : 'Take ' + ITEMS[p.type], () => takePickup(p), p.x, p.z, 8, { minDot: 0.45 });
+  for (const p of pickups) consider(S.style === 'party' ? 'Open present' : 'Take ' + nm(p.type), () => takePickup(p), p.x, p.z, 8, { minDot: 0.45 });
   for (const d of w.doors) {
     if (d.exit) continue;
     const label = d.gate && d.locked ? 'JD\'s door is locked' : d.locked ? (S.items.includes('keys') ? 'Unlock door' : 'Locked – needs keys') : (d.lockT > 0 ? 'Door is locked' : (d.want ? null : 'Open door'));
     if (label) consider(label, () => useDoor(d), cellCenter(d.cx), cellCenter(d.cz), 11, { los: false });
   }
-  for (const v of w.vending) consider(S.items.includes('quarter') ? 'Insert quarter' : 'Vending machine (needs a quarter)', () => useVending(v), v.x, v.z, 10, { los: false });
+  if (S.style !== 'lessonb') for (const v of w.vending) consider(S.items.includes('quarter') ? 'Insert quarter' : 'Vending machine (needs a quarter)', () => useVending(v), v.x, v.z, 10, { los: false });
   G.extraInteract?.(consider);
   return best;
 }
 function takePickup(p) {
   if (!giveItem(p.type)) { say('Inventory full!', 1200); return; }
   G.root.remove(p.sprite); pickups.splice(pickups.indexOf(p), 1); Snd.sfx.pickup(); haptic(15);
-  say(S.style === 'party' ? `Unwrapped <b>${ITEMS[p.type]}</b>!` : `Got <b>${ITEMS[p.type]}</b>`, 1600);
+  say(S.style === 'party' ? `Unwrapped <b>${nm(p.type)}</b>!` : `Got <b>${nm(p.type)}</b>`, 1600);
 }
 function useDoor(d) {
   if (d.gate && d.locked) { Snd.sfx.locked(); say("JD's swinging doors are locked… for now.", 2200); return; }
@@ -232,7 +235,7 @@ function useVending(v) {
   if (qi < 0) { Snd.sfx.locked(); say('Insert a <b>quarter</b>.', 1500); return; }
   S.items[qi] = null; Snd.sfx.coin(); renderSlots();
   const it = Math.random() < 0.55 ? 'zesty' : 'bsoda';
-  setTimeout(() => { Snd.sfx.vend(); if (!giveItem(it)) addPickup(it, v.x, v.z); say(`Out came a <b>${ITEMS[it]}</b>!`, 1800); }, 500);
+  setTimeout(() => { Snd.sfx.vend(); if (!giveItem(it)) addPickup(it, v.x, v.z); say(`Out came a <b>${nm(it)}</b>!`, 1800); }, 500);
 }
 
 // ------------------------------------------------------------------ notebooks + You Can Think Pad
@@ -254,12 +257,12 @@ let pad = null;
 const padMsg = (t) => { $('mathMsg').textContent = t; };
 function openPad(nb) {
   const nbNo = S.run === 'endless' ? S.endlessScore + 1 : S.notebooks + 1;
-  pad = { nb, i: 0, wrong: 0, right: 0, qs: genProblems(nbNo, nbNo >= 2), input: '', lock: false, nbNo };
+  pad = { nb, i: 0, wrong: 0, right: 0, qs: S.style === 'lessonb' ? G.lb.problems(nbNo) : genProblems(nbNo, nbNo >= 2), input: '', lock: false, nbNo };
   S.mode = 'pad'; document.exitPointerLock?.(); $('math').classList.remove('hidden'); setPrompt(null);
-  $('mathTitle').textContent = S.run === 'endless' ? `YOU CAN THINK PAD · NOTEBOOK ${nbNo}` : `YOU CAN THINK PAD · NOTEBOOK ${nbNo} OF ${TOTAL_NB}`;
+  $('mathTitle').textContent = S.style === 'lessonb' ? `NOTEBOOK ${nbNo}` : S.run === 'endless' ? `YOU CAN THINK PAD · NOTEBOOK ${nbNo}` : `YOU CAN THINK PAD · NOTEBOOK ${nbNo} OF ${TOTAL_NB}`;
   Snd.sfx.click(); showQ(true);
 }
-const spoken = (q) => q.replace('−', 'minus').replace('+', 'plus').replace('=', '');
+const spoken = (q) => q.replace('−', 'minus').replace('+', 'plus').replace('×', 'times').replace('÷', 'divided by').replace('=', '');
 function showQ(first) {
   const q = pad.qs[pad.i];
   $('mathQ').textContent = q.q; $('mathA').innerHTML = '&nbsp;'; pad.input = ''; $('mathProg').textContent = `Problem ${pad.i + 1}/3`;
@@ -273,7 +276,7 @@ export function padInput(k) {
   if (k === '⌫') pad.input = pad.input.slice(0, -1);
   else if (k === 'OK') { submit(); return; }
   else if (k === '-') { if (!pad.input) pad.input = '-'; }
-  else if (pad.input.replace('-', '').length < 4) pad.input += k;
+  else if (pad.input.replace('-', '').length < (S.style === 'lessonb' ? 5 : 4)) pad.input += k;
   $('mathA').textContent = pad.input || ' ';
 }
 G.padInput = padInput;
@@ -284,9 +287,10 @@ function submit() {
   if (ok) { pad.right++; S.correct++; Snd.sfx.correct(); const m = pick(['Correct!', 'Great job!', 'Good!', 'Excellent!']); padMsg(m); Snd.speak(m, 0.7); }
   else {
     pad.wrong++; S.wrong++; Snd.sfx.wrong();
-    padMsg(q.impossible ? 'I GET ANGRIER FOR EVERY PROBLEM YOU GET WRONG!' : `Wrong! It was ${q.a}.`); Snd.speak(q.impossible ? 'I get angrier for every problem you get wrong!' : 'Oh no, that is wrong!', 0.25);
-    try { G.actors.onWrong(pad.i, q.impossible, pad); } catch (e) { console.error(e); }
+    padMsg(q.impossible ? 'I GET ANGRIER FOR EVERY PROBLEM YOU GET WRONG!' : S.style === 'lessonb' ? 'Wrong!' : `Wrong! It was ${q.a}.`); Snd.speak(q.impossible ? 'I get angrier for every problem you get wrong!' : 'Oh no, that is wrong!', 0.25);
+    try { if (S.style !== 'lessonb') G.actors.onWrong(pad.i, q.impossible, pad); } catch (e) { console.error(e); }
   }
+  try { if (S.style === 'lessonb') G.lb.onAnswer(ok, pad.i, q); } catch (e) { console.error(e); }
   const p = pad;
   setTimeout(() => {
     if (pad !== p) return;   // the pad was closed some other way (quit, restart)
@@ -306,9 +310,9 @@ export function collectNotebook(nb, info = null) {
   S.notebooks++;
   if (S.run === 'endless') { S.endlessScore++; G.endlessCollected(); }
   updateNb(); Snd.sfx.notebook(); haptic(40);
-  G.actors.onNotebook(info);
-  if (S.run !== 'endless' && S.notebooks >= TOTAL_NB) startEscape();
-  else if (info && info.nbNo === 1 && info.wrong === 0 && S.run !== 'endless' || (info && S.run === 'endless' && S.endlessScore === 1 && info.wrong === 0)) {
+  if (S.style === 'lessonb') G.lb.onNotebook(info); else G.actors.onNotebook(info);
+  if (S.run !== 'endless' && S.notebooks >= (S.style === 'lessonb' ? G.lb.target() : TOTAL_NB)) startEscape();
+  else if (S.style !== 'lessonb' && info && info.nbNo === 1 && info.wrong === 0 && S.run !== 'endless' || (info && S.run === 'endless' && S.endlessScore === 1 && info.wrong === 0)) {
     if (S.style === 'party') say('<b>JD</b>: "Great job! A present for you!"', 3200, 'Great job! Here is a present!'); else say('<b>JD</b>: "Perfect! Here is a quarter!"', 3200, 'Perfect! Here is a quarter!');
     if (!giveItem('quarter')) addPickup('quarter', P.x, P.z);
   }
@@ -316,6 +320,7 @@ export function collectNotebook(nb, info = null) {
 }
 G.collectNotebook = collectNotebook;
 function startEscape() {
+  if (S.style === 'lessonb') { G.lb.onEscape(); return; }
   S.exitsOpen = true; G.world.exitsOpen = true; S.phase = 'escape';
   G.world.exitDoors.forEach((d) => { d.mesh.visible = false; });
   if (S.style === 'null' || S.style === 'glitch') { G.nullAllNotebooks(); return; }
@@ -327,9 +332,10 @@ function startEscape() {
 // ------------------------------------------------------------------ run setup
 export function setStyle(style, run, fun) { S.style = style; S.run = run; S.fun = { ...fun }; }
 export function startRun(style, run, fun) {
+  G.lb?.cleanup?.();
   const nullish = style === 'null' || style === 'glitch';
-  setStyle(style, run, nullish ? { hard: false, lights: false, mirror: false } : fun);
-  Object.assign(S, { notebooks: 0, correct: 0, wrong: 0, stamina: 100, boost: 0, items: [null, null, null], sel: 0, time: 0, detention: 0, exitsOpen: false, exitsReached: 0, firstWrongT: null, hostile: false, carry: null, deafT: 0, silentDoorsT: 0, calmT: 0, staticT: 0, endlessScore: 0, event: null, eventT: 0, nextEventT: rnd(45, 80), caught: false, bossHits: 0, phase: 'main', behind: false, paused: false });
+  setStyle(style, run, nullish || style === 'lessonb' ? { hard: false, lights: false, mirror: false } : fun);
+  Object.assign(S, { notebooks: 0, correct: 0, wrong: 0, stamina: 100, boost: 0, items: [null, null, null], sel: 0, time: 0, detention: 0, exitsOpen: false, exitsReached: 0, firstWrongT: null, hostile: false, carry: null, deafT: 0, silentDoorsT: 0, calmT: 0, staticT: 0, endlessScore: 0, event: null, eventT: 0, nextEventT: rnd(45, 80), caught: false, bossHits: 0, phase: 'main', behind: false, paused: false, staMax: 100, staDrain: 0, staRegen: 0, staResume: 0, staDelay: 0, staDelayT: 0, doorHold: 0, runMul: 0, frozenT: 0 });
   Object.assign(P, { vx: 0, vz: 0, pitch: 0, boots: 0, shoveX: 0, shoveZ: 0, y: 0, exhausted: false });
   const mirror = !!S.fun.mirror;
   if (!G.worlds[mirror]) G.worlds[mirror] = buildWorld(G.scene, mirror);
@@ -346,11 +352,13 @@ export function startRun(style, run, fun) {
   clearNotebooks(); clearPickups(); puffs.forEach((p) => G.root.remove(p.sprite)); puffs.length = 0;
   P.x = cellCenter(15); P.z = cellCenter(16); P.yaw = 0;
   // notebooks: 7 random classrooms (never JD's room)
-  const rooms = w.roomInfo.filter((r) => r.r !== w.jdRoom).sort(() => Math.random() - 0.5);
-  const count = S.run === 'endless' ? 3 : TOTAL_NB;
-  rooms.slice(0, count).forEach((ri_) => spawnNotebookAt(ri_));
-  G.nbSpare = rooms.slice(count);
-  spawnItems();
+  if (style !== 'lessonb') {
+    const rooms = w.roomInfo.filter((r) => r.r !== w.jdRoom).sort(() => Math.random() - 0.5);
+    const count = S.run === 'endless' ? 3 : TOTAL_NB;
+    rooms.slice(0, count).forEach((ri_) => spawnNotebookAt(ri_));
+    G.nbSpare = rooms.slice(count);
+    spawnItems();
+  }
   G.resetActors(); G.setupMode();
   applyLook(); updateNb(); renderSlots(); banner('');
   S.mode = 'play';
@@ -384,16 +392,18 @@ export function update(dt) {
   const playing = S.mode === 'play';
   const keyMove = !!(input.mx || input.mz);
   let mx = input.mx, mz = input.mz; const ml = Math.hypot(mx, mz); if (ml > 1) { mx /= ml; mz /= ml; }
-  if (!playing) { mx = mz = 0; }
+  if (!playing || S.frozenT > 0) { mx = mz = 0; }
   P.moving = ml > 0.1 && playing;
   const wantRun = input.run;
   if (P.stamina === undefined) P.stamina = 100;
-  if (S.stamina <= 0) P.exhausted = true; else if (S.stamina > 25) P.exhausted = false;
+  const staMax = S.staMax || 100;
+  if (S.stamina <= 0) P.exhausted = true; else if (S.stamina > (S.staResume || 25)) P.exhausted = false;
   P.running = wantRun && P.moving && S.stamina > 0 && !P.exhausted;
-  let speed = P.running ? ai().runSpeed : ai().walkSpeed;
+  let speed = P.running ? (S.style === 'lessonb' ? ai().walkSpeed * S.runMul : ai().runSpeed) : ai().walkSpeed;
   if (S.event === 'flood') speed *= 0.6;
   if (S.carry && S.carry.heavy) speed *= 0.85;
-  if (P.running) S.stamina = Math.max(0, S.stamina - (S.boost > 0 ? 0 : 18) * dt); else S.stamina = Math.min(100, S.stamina + 12 * dt);
+  if (P.running) { S.stamina = Math.max(0, S.stamina - (S.boost > 0 ? 0 : (S.staDrain || 18)) * dt); S.staDelayT = S.staDelay || 0; }
+  else { S.staDelayT = Math.max(0, (S.staDelayT || 0) - dt); if (S.staDelayT <= 0) S.stamina = Math.min(staMax, S.stamina + (S.staRegen || 12) * dt); }
   S.boost = Math.max(0, S.boost - dt);
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
   const acc = Math.min(1, dt * (S.event === 'gravity' ? 3 : 14));
@@ -410,7 +420,7 @@ export function update(dt) {
   }
   S.silentDoorsT = Math.max(0, S.silentDoorsT - dt); S.calmT = Math.max(0, S.calmT - dt);
   if (S.deafT > 0) { S.deafT -= dt; if (S.deafT <= 0) Snd.sfx.staticLoopStop(); }
-  if (S.detention > 0) { S.detention -= dt; if (S.detention <= 0) G.actors.endDetention(false); }
+  if (S.detention > 0) { S.detention -= dt; if (S.detention <= 0) (S.style === 'lessonb' ? G.lb : G.actors).endDetention(false); }
   if (S.mode === 'play') {
     interact = findInteract();
     setPrompt(interact ? interact.label + (isTouch ? '' : ' [E / Click]') : null);
@@ -427,7 +437,7 @@ export function update(dt) {
   notebooksList.forEach((n) => { if (!n.taken) { n.mesh.rotation.y += dt * 1.8; n.mesh.position.y = 5.4 + Math.sin(S.time * 2) * 0.35; } });
   for (let i = puffs.length - 1; i >= 0; i--) { const p = puffs[i]; p.life -= dt; p.sprite.position.x += p.vx * dt; p.sprite.position.z += p.vz * dt; p.sprite.material.opacity = clamp(p.life * 2, 0, 0.8); p.sprite.scale.multiplyScalar(1 + dt * 3); if (p.life <= 0) { G.root.remove(p.sprite); puffs.splice(i, 1); } }
   // HUD
-  hud.sta.style.width = S.stamina + '%'; hud.sta.classList.toggle('low', P.exhausted);
+  hud.sta.style.width = clamp(S.stamina / (S.staMax || 100) * 100, 0, 100) + '%'; hud.sta.classList.toggle('low', P.exhausted || (S.style === 'lessonb' && S.stamina < 20)); hud.sta.classList.toggle('mid', S.style === 'lessonb' && !P.exhausted && S.stamina >= 20 && S.stamina <= 60);
   if (subTimer > 0) { subTimer -= dt; if (subTimer <= 0) hud.sub.style.display = 'none'; }
   if (S.map) drawMap();
   hud.carry.style.display = S.carry ? 'block' : 'none'; if (S.carry) hud.carry.textContent = `Holding ${S.carry.label || 'item'}`;
@@ -445,6 +455,7 @@ function checkExits() {
   });
 }
 G.reachExit = (i, d) => {
+  if (S.style === 'lessonb') { G.lb.win(); return; }
   if (S.style === 'null' || S.style === 'glitch') { G.nullExit(i, d); return; }
   if (S.style === 'party') { G.partyFinale(); return; }
   win();
@@ -498,14 +509,19 @@ export function showOver(title, msg, o = {}) {
   G.hooks.onOver?.(o);
 }
 G.showOver = showOver;
+G.winLB = (text) => { Snd.sfx.win(); showOver('YOU ESCAPED!', text, { won: true, retry: 'Play again' }); };
 export function caught(by = 'jd') {
   if (S.caught || (S.mode !== 'play' && S.mode !== 'playtime')) return;
   S.caught = true; document.exitPointerLock?.(); Snd.music.stop(); Snd.sfx.alarmStop(); Snd.sfx.staticLoopStop(); setPrompt(null); haptic([200, 80, 200]);
   if (S.style === 'null' || S.style === 'glitch') { G.nullCatch(); return; }
-  S.mode = 'scare'; Snd.sfx.scare();
+  const lessonb = S.style === 'lessonb', scare = settings().scare || 'normal';
+  S.mode = 'scare';
+  const finish = () => { $('scare').classList.add('hidden'); showOver(lessonb ? 'The Teacher caught you!' : 'JD got you!', lessonb ? G.lb.overText() : S.run === 'endless' ? `You collected ${S.endlessScore} notebooks.` : `You collected ${S.notebooks} of ${TOTAL_NB} notebooks.`, { lost: true }); if (S.run === 'endless') G.recordEndless(); };
+  if (scare === 'off') { flash('#000', 1); Snd.sfx.click(); setTimeout(finish, 700); return; }   // no flashes, no sudden stings
+  Snd.sfx.scare();
   const c = $('scareCv'), g = c.getContext('2d'); g.fillStyle = '#300'; g.fillRect(0, 0, 512, 768); g.drawImage(A.drawJD('scream', true), -60, 30, 640, 960);
-  $('scare').classList.remove('hidden');
-  setTimeout(() => { $('scare').classList.add('hidden'); showOver('JD got you!', S.run === 'endless' ? `You collected ${S.endlessScore} notebooks.` : `You collected ${S.notebooks} of ${TOTAL_NB} notebooks.`, { lost: true }); if (S.run === 'endless') G.recordEndless(); }, 1900);
+  $('scare').classList.toggle('calm', scare === 'low'); $('scare').classList.remove('hidden');
+  setTimeout(finish, scare === 'low' ? 1400 : 1900);
 }
 G.caught = caught;
 export function win(extra = '', title = 'YOU ESCAPED!') {
@@ -521,7 +537,7 @@ export function win(extra = '', title = 'YOU ESCAPED!') {
     if (st === 'demo' && !uf.hard) { uf.hard = true; unlocks.push('Hard Mode'); }
     const best = Save.data.scores.bestTime[st]; if (best == null || t < best) Save.data.scores.bestTime[st] = Math.round(t);
     if (t < 360) unlockAchievement('speedrun');
-    if (S.fun.hard && S.fun.lights && S.fun.mirror) { unlockAchievement('all_fun'); if (!p.nullStyleUnlocked) { p.nullStyleUnlocked = true; unlocks.push('a hidden style…'); } }
+    if (S.fun.hard && S.fun.lights && S.fun.mirror) { unlockAchievement('all_fun'); }
     if (unlocks.length) msg += `\nUnlocked: ${unlocks.join(', ')}!`;
     Save.save();
   }
