@@ -1,8 +1,8 @@
-// Lesson-B spec checks: Teacher table (8.3), anger (7.3/8.3), problem generator (7.4/7.5), noise bus (11), rank (A.3), share code (14.3), variant layer (20).
+// Lesson-B spec checks: Teacher table (8.3), anger (8.3), noise bus (11), rank (A.3), share code (14.3), variant layer (20).
 import fs from 'fs'; import assert from 'assert';
 import * as L from '../js/lbai.js';
 const rd = (f) => JSON.parse(fs.readFileSync(new URL('../data/lessonb/' + f, import.meta.url)));
-const teacherTuned = rd('teacher.json'), tiers = rd('tiers.json');
+const teacherTuned = rd('teacher.json');
 // the spec's raw formulas (no pacing caps) for the section 8.3 table
 const teacher = { ...teacherTuned, speedCapByNotebooks: undefined, waitFloorByNotebooks: undefined };
 
@@ -31,41 +31,15 @@ assert.ok(L.teacherParams(3, 6, teacherTuned).avgSpeed <= 1.15 * WALK, 'at noteb
 assert.ok(L.teacherParams(6, 6, teacherTuned).avgSpeed <= RUN + 1e-9, 'by notebook 6 he matches (never beats) the run speed');
 console.log('ok  smooth pacing (no cliff after notebook 3)');
 
-// anger: wrong +1.0, correct -0.15 (floor 0), cap 6, decay only after 10 s unseen
+// anger: +1.0 per increase, -0.15 per decrease (floor 0), cap 6, decay only after 10 s unseen
 assert.strictEqual(L.angerWrong(0, 1, teacher), 1); assert.strictEqual(L.angerWrong(5.5, 1, teacher), 6);
 assert.ok(Math.abs(L.angerCorrect(1, teacher) - 0.85) < 1e-9); assert.strictEqual(L.angerCorrect(0.1, teacher), 0);
 assert.strictEqual(L.angerDecay(2, 1, 5, teacher), 2); assert.ok(Math.abs(L.angerDecay(2, 1, 11, teacher) - 1.98) < 1e-9);
 console.log('ok  anger model');
 
-// T01: notebook 1: P3 is impossible and any answer is wrong
-const nb1 = L.generateNotebook(1, L.mulberry32(5), tiers);
-assert.strictEqual(nb1.length, 3); assert.ok(nb1[2].impossible && nb1[2].answer === null && !nb1.slice(0, 2).some((p) => p.impossible));
-for (const a of ['0', '1', '42', '-3', '']) assert.ok(!L.checkAnswer(nb1[2], a));
-assert.ok(L.checkAnswer(nb1[0], String(nb1[0].answer)) && !L.checkAnswer(nb1[0], 'x'));
-assert.ok(tiers.impossible.length >= 6);
-// generator rules over many seeds: integers, no duplicate answers per notebook, no trivial operands, negatives only from notebook 4, impossible only N1-P3
-for (let seed = 1; seed <= 300; seed++) {
-  const rng = L.mulberry32(seed);
-  for (let nb = 1; nb <= 7; nb++) {
-    const ps = L.generateNotebook(nb, rng, tiers), answers = ps.filter((p) => !p.impossible).map((p) => p.answer);
-    assert.strictEqual(new Set(answers).size, answers.length, `duplicate answers nb${nb} seed${seed}`);
-    ps.forEach((p, i) => {
-      assert.strictEqual(p.impossible, nb === 1 && i === 2, `impossible placement nb${nb} p${i}`);
-      if (p.impossible) return;
-      assert.ok(Number.isInteger(p.answer), `integer answer ${p.prompt}`);
-      if (nb < 4) assert.ok(p.answer >= 0, `negative before notebook 4: ${p.prompt} ${p.answer}`);
-      const nums = (p.prompt.match(/\d+/g) || []).map(Number);
-      if (/×/.test(p.prompt)) assert.ok(nums.every((n) => n >= 2), `×0/×1 in ${p.prompt}`);
-      if (/\+/.test(p.prompt)) assert.ok(nums.every((n) => n >= 1), `+0 in ${p.prompt}`);
-    });
-  }
-}
-console.log('ok  problem generator (300 seeds x 7 notebooks)');
-// T11: same seed twice -> identical notebooks; different seed -> different
-const a = JSON.stringify([1, 2, 3, 4, 5, 6, 7].map((n) => L.generateNotebook(n, L.makeStreams(123456).math, tiers)));
-const b = JSON.stringify([1, 2, 3, 4, 5, 6, 7].map((n) => L.generateNotebook(n, L.makeStreams(123456).math, tiers)));
-const c = JSON.stringify([1, 2, 3, 4, 5, 6, 7].map((n) => L.generateNotebook(n, L.makeStreams(654321).math, tiers)));
-assert.strictEqual(a, b); assert.notStrictEqual(a, c);
+// seeded streams: the same seed gives the same sequence, another seed differs (used for notebook rooms, item placement, characters)
+const seq = (seed) => { const st = L.makeStreams(seed); return JSON.stringify(['rooms', 'items', 'chars', 'teacher'].map((k) => [st[k](), st[k](), st[k]()])); };
+assert.strictEqual(seq(123456), seq(123456)); assert.notStrictEqual(seq(123456), seq(654321));
 console.log('ok  seeded determinism');
 
 // noise bus: highest priority in range, ties -> closest; out of range ignored

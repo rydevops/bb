@@ -1,4 +1,4 @@
-// Lesson-B pure logic (no DOM / three.js): Teacher formulas, anger, problem generator, noise priority, rank, share code.
+// Lesson-B pure logic (no DOM / three.js): Teacher formulas, anger, noise priority, rank, share code. (No math questions in this mode.)
 // Unit-tested in tests/lessonb.test.mjs.
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -8,7 +8,6 @@ const STREAMS = ['rooms', 'items', 'chars', 'math', 'teacher'];
 export function makeStreams(seed) { const o = {}; STREAMS.forEach((n, i) => { o[n] = mulberry32((seed * 2654435761 + (i + 1) * 40503) >>> 0); }); return o; }
 export const randSeed = () => 100000 + Math.floor(Math.random() * 900000);
 export const rint = (rng, a, b) => a + Math.floor(rng() * (b - a + 1));
-export const rpick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 export function weightedPick(rng, weights, exclude = {}) {
   const e = Object.entries(weights).filter(([k]) => !exclude[k]); const tot = e.reduce((s, [, w]) => s + w, 0); let r = rng() * tot;
   for (const [k, w] of e) { r -= w; if (r <= 0) return k; } return e[e.length - 1][0];
@@ -44,31 +43,6 @@ export function pickNoise(events, pos, minPriority = 0, dist = (a, b) => Math.hy
   }
   return best;
 }
-
-// ---- notebook problems (spec 7.4, 7.5)
-export function generateNotebook(nb, rng, tiers) {
-  const tier = tiers.tiers[String(clamp(nb, 1, 7))], out = [], used = new Set();
-  const [lo, hi] = tier.range, mr = tier.mulRange || [2, 9];
-  const build = (type) => {
-    switch (type) {
-      case 'add': { const a = rint(rng, Math.max(1, lo), hi), b = rint(rng, Math.max(1, lo), hi); return { prompt: `${a} + ${b} =`, answer: a + b }; }
-      case 'sub': { let a = rint(rng, Math.max(1, lo), hi), b = rint(rng, Math.max(1, lo), hi); if (a === b) a = Math.min(hi, b + 1); if (a === b) b = Math.max(1, a - 1);
-        if (!tier.negatives && a < b) [a, b] = [b, a]; return { prompt: `${a} − ${b} =`, answer: a - b }; }
-      case 'addsub': return build(rng() < 0.5 ? 'add' : 'sub');
-      case 'mul': { const a = rint(rng, mr[0], mr[1]), b = rint(rng, mr[0], mr[1]); return { prompt: `${a} × ${b} =`, answer: a * b }; }
-      case 'div': { const d = rint(rng, 2, Math.min(mr[1], 12)), q = rint(rng, 2, tier.quotMax || 12); return { prompt: `${d * q} ÷ ${d} =`, answer: q }; }
-      case 'two': { const a = rint(rng, lo, hi), b = rint(rng, 2, Math.min(hi, 12)), c = rint(rng, 2, Math.min(hi, 12)); return { prompt: `${a} + ${b} × ${c} =`, answer: a + b * c }; }
-      default: throw new Error('unknown problem type ' + type);
-    }
-  };
-  tier.types.forEach((type) => {
-    if (type === 'impossible') { out.push({ prompt: rpick(rng, tiers.impossible), answer: null, impossible: true }); return; }
-    let p; for (let tries = 0; tries < 40; tries++) { p = build(type); if (!used.has(p.answer)) break; }   // no duplicate answers within a notebook
-    used.add(p.answer); out.push({ ...p, impossible: false });
-  });
-  return out;
-}
-export function checkAnswer(p, input) { return !p.impossible && /^-?\d{1,5}$/.test(input) && Number(input) === p.answer; }
 
 // ---- results (spec 4.3, A.3)
 export function rankScore(r) {
