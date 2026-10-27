@@ -1,5 +1,5 @@
 // Lesson-B: the "-B mod" mode (Project LESSON-B spec). A self-contained ruleset that plugs into the engine:
-// Teacher with rhythm pursuit + anger, spec math tiers, six hallway characters, ten items, detention, escape phase,
+// Teacher with rhythm pursuit + anger, six hallway characters, ten items, detention, escape phase,
 // results + rank + share code, all driven by data/lessonb/*.json and the variant layer (data/lessonb/variants/b.json).
 import * as THREE from '../vendor/three.module.js';
 import { G, S, P, input, $, rnd, pick, clamp, isTouch } from './state.js';
@@ -11,15 +11,15 @@ import * as Snd from './audio.js';
 
 const D = 0.8, V = 1.25;     // spec units -> engine units: distances x0.8 (tile 10u -> 8), speeds x1.25 (walk 10 u/s -> 12.5)
 export let LB = null;        // merged data config (null until loaded)
-const FILES = ['teacher', 'tiers', 'presets', 'items', 'characters'];
+const FILES = ['teacher', 'presets', 'items', 'characters'];
 
 export async function loadLB() {
   try {
     const get = (f) => fetch('data/lessonb/' + f + '.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(f); return r.json(); });
-    const [teacher, tiers, presets, items, characters] = await Promise.all(FILES.map(get));
+    const [teacher, presets, items, characters] = await Promise.all(FILES.map(get));
     const variant = await get('variants/b');
     const base = { teacher, characters, items, notebooks: 7 };
-    LB = { ...L.applyVariant(base, variant), tiers, presets, variant };
+    LB = { ...L.applyVariant(base, variant), presets, variant };
   } catch (e) { console.error('Lesson-B data failed to load', e); LB = null; }
   G.lbReady = !!LB; return LB;
 }
@@ -54,7 +54,7 @@ lb.setup = () => {
   const opts = G.lbOpts || { diff: 'normal', seed: L.randSeed(), mode: 'story' };
   const seed = opts.seed || L.randSeed(), diff = opts.diff || 'normal', preset = LB.presets[diff];
   run = {
-    seed, diff, preset, practice: S.run === 'practice', rng: L.makeStreams(seed), clock: 0, answers: 0, correct: 0, wrong: 0, detentions: 0, itemsUsed: 0, hits: 0, flawless: 0, notebookRight: 0,
+    seed, diff, preset, practice: S.run === 'practice', rng: L.makeStreams(seed), clock: 0, detentions: 0, itemsUsed: 0, hits: 0,
     quietRunT: 0, runSeenT: 0, mercyT: 0, freezeT: 0, stunT: 0, zestT: 0, staticT: 0, noise: [], violations: 0, prior: 0, escapeT: 0, escaped: false, hyper: false, wMul: 1, lastSeenT: 0, spottedCooldown: 0,
     mercyDet: 0, vend: [{ stock: LB.items.vending.stock, cd: 0 }, { stock: LB.items.vending.stock, cd: 0 }], restocked: false, decks: [], capTimer: 0, over: false, nbTarget: Math.min(LB.notebooks, 7),
   };
@@ -468,15 +468,13 @@ lb.interact = (consider) => {
   run.decks.forEach((d) => consider(S.items.includes('tape') ? 'Tape Deck: insert Static Tape' : 'Tape Deck', () => { const i = S.items.indexOf('tape'); if (i < 0) { G.say('You need a <b>Static Tape</b>.', 1500); return; } S.sel = i; G.renderSlots(); G.useItem(); }, d.x, d.z, 9, { los: false }));
 };
 
-// ------------------------------------------------------------------ math hooks (called from game.js)
-lb.problems = (nbNo) => L.generateNotebook(Math.min(nbNo, 7), run.rng.math, LB.tiers).map((p) => ({ q: p.prompt, a: p.answer, impossible: p.impossible }));
-lb.onAnswer = (ok, idx, q) => {
-  const T = ent.T, tp = LB.teacher; run.answers++;
-  if (ok) { run.correct++; run.notebookRight++; T.A = L.angerCorrect(T.A, tp); }
-  else { run.wrong++; T.A = L.angerWrong(T.A, run.preset.angerPerWrong * (tp.angerPerWrong / 1.0), tp); if (q.impossible && S.notebooks === 0) T.hostile = true; }
-  if (idx === 2) { if (run.notebookRight === 3 && S.notebooks >= 1) run.flawless++; if (run.notebookRight === 3 && S.notebooks + 1 === 7) run.flawless7 = true; run.notebookRight = 0; }
-};
-lb.onNotebook = () => { run.capTimer = 0; if (S.notebooks === LB.items.vending.restockAt && !run.restocked) { run.restocked = true; run.vend.forEach((v) => { v.stock = LB.items.vending.stock; }); } };
+// ------------------------------------------------------------------ notebooks (Lesson-B has no math questions)
+lb.onNotebook = () => {
+  const T = ent.T; run.capTimer = 0;
+  if (S.notebooks === 1 && !run.practice) {   // the first notebook turns the Teacher: his first anger, then he starts hunting
+    T.hostile = true; T.A = L.angerWrong(T.A, run.preset.angerPerWrong * LB.teacher.angerPerWrong, LB.teacher);
+    Snd.sfx.glitchy(); G.say('<b>Teacher</b>: "Class is in session."', 3000, 'Class is in session.');
+  } if (S.notebooks === LB.items.vending.restockAt && !run.restocked) { run.restocked = true; run.vend.forEach((v) => { v.stock = LB.items.vending.stock; }); } };
 lb.onEscape = () => {
   const w = world(), T = ent.T; run.escaped = true; run.escapeT = LB.teacher.escape.alarmSeconds; run.hyper = true;
   T.A = L.angerWrong(T.A, LB.teacher.escape.angerBonus, LB.teacher); if (!run.practice) { T.hostile = true; if (T.state === 'friendly') T.state = 'hunting'; }
@@ -530,7 +528,7 @@ lb.doorUsers = () => (run && ent ? [ent.T, ent.principal.active && ent.principal
 // ------------------------------------------------------------------ results
 const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}.${String(Math.floor((t % 1) * 100)).padStart(2, '0')}`;
 function stats() {
-  const acc = run.answers ? run.correct / run.answers : 1, score = L.rankScore({ time: run.clock, wrong: run.wrong, detentions: run.detentions, itemsUsed: run.itemsUsed, hits: run.hits, flawless: run.flawless });
+  const acc = 1, score = L.rankScore({ time: run.clock, wrong: 0, detentions: run.detentions, itemsUsed: run.itemsUsed, hits: run.hits, flawless: 0 });
   return { acc, score, rank: L.rankLetter(score), code: L.encodeShare({ mode: S.run === 'practice' ? 'practice' : 'story', diff: run.diff, seed: run.seed, time: run.clock, accuracy: acc }) };
 }
 lb.itemUsed = () => { if (run) run.itemsUsed++; };
@@ -543,10 +541,10 @@ lb.win = () => {
   if (!run.practice) {
     const best = sc.lessonb.best[run.diff]; if (best == null || run.clock < best) { sc.lessonb.best[run.diff] = Math.round(run.clock * 100) / 100; extra = '\nNew best time!'; }
     sc.lessonb.wins++; sc.lessonb.seeds = [run.seed, ...sc.lessonb.seeds.filter((s) => s !== run.seed)].slice(0, 20);
-    unlockAchievement('lb_win'); if (run.flawless7) unlockAchievement('lb_flawless'); if (run.itemsUsed === 0) unlockAchievement('lb_ghost'); if (run.quietRunT === 0) unlockAchievement('lb_quiet'); if (close) unlockAchievement('lb_close');
+    unlockAchievement('lb_win'); if (run.itemsUsed === 0) unlockAchievement('lb_ghost'); if (run.quietRunT === 0) unlockAchievement('lb_quiet'); if (close) unlockAchievement('lb_close');
     Save.save();
   }
-  const text = `Time ${mmss(run.clock)} · Accuracy ${Math.round(st.acc * 100)}% · Wrong ${run.wrong}\nItems used ${run.itemsUsed} · Detentions ${run.detentions} · Character hits ${run.hits}\nRank ${st.rank} (${Math.round(st.score)} pts) · Seed ${run.seed} · ${run.preset.label}\nShare code ${st.code}${extra}`;
+  const text = `Time ${mmss(run.clock)}\nItems used ${run.itemsUsed} · Detentions ${run.detentions} · Character hits ${run.hits}\nRank ${st.rank} (${Math.round(st.score)} pts) · Seed ${run.seed} · ${run.preset.label}\nShare code ${st.code}${extra}`;
   G.winLB(text);
 };
 lb.run = () => run;

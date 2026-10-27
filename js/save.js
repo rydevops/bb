@@ -91,7 +91,6 @@ export const ACHIEVEMENTS = [
   ['beat_null', 'Null and Void', 'Defeat Null'],
   ['beat_glitch', 'Glitch in the System', 'Beat Glitch Style'],
   ['lb_win', 'Passing Grade', 'Escape Lesson-B (the -B mod)'],
-  ['lb_flawless', 'Flawless Notebook', 'Lesson-B: answer all 3 problems of notebook 7 correctly'],
   ['lb_ghost', 'Ghost', 'Lesson-B: escape without using any item'],
   ['lb_quiet', 'Quiet Feet', 'Lesson-B: escape without running in the Teacher\'s sight'],
   ['lb_close', 'Close Shave', 'Lesson-B: escape with the Teacher right behind you'],

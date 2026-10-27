@@ -12,7 +12,7 @@ import * as LBAI from './lbai.js';
 import { initGame, startRun, update, pause, resume, padInput, applyLook } from './game.js';
 import { initUI, M, renderMenu } from './ui.js';
 
-const BUILD = 'v12-layout';
+const BUILD = 'v13-nomath';
 const canvas = $('view');
 let failures = 0, R = null, last = performance.now(), menuYaw = 0, lastOpts = null, wakeLock = null;
 const keys = {}, stick = { x: 0, y: 0, cx: 0, cy: 0 };
@@ -56,7 +56,7 @@ function start(style, run, fun, retrySeed) {
   startRun(style, run, fun); applySettings();
   S.mode = 'play'; G.musicHold = 8; Snd.music.play('menuConfirm'); G.musicWant = 'menuConfirm';
   if (style === 'null' || style === 'glitch') { G.musicHold = 0; Snd.music.stop(); G.musicWant = null; }
-  const intro = { classic: 'Find the <b>7 notebooks</b>. The yellow swinging doors open after notebook 2. JD hears every noise…', party: "It's a party! Presents hide your items. Find the <b>7 notebooks</b>.", demo: 'Demo Style: feed the Math Machines <b>balloons</b> to get notebooks.', null: 'Quiet. Collect the notebooks. Make no sound.', lessonb: 'Lesson-B: listen for the ruler slaps. Notebook 1 ends with an impossible problem…', glitch: 'Something is off in the school…' }[style];
+  const intro = { classic: 'Find the <b>7 notebooks</b>. The yellow swinging doors open after notebook 2. JD hears every noise…', party: "It's a party! Presents hide your items. Find the <b>7 notebooks</b>.", demo: 'Demo Style: feed the Math Machines <b>balloons</b> to get notebooks.', null: 'Quiet. Collect the notebooks. Make no sound.', lessonb: 'Lesson-B: just grab the 7 notebooks. The first one wakes the Teacher: listen for his ruler slaps.', glitch: 'Something is off in the school…' }[style];
   G.say(run === 'endless' ? 'Endless: collect as many notebooks as you can!' : run === 'free' ? 'Free Run: explore. There is no JD.' : intro, 5000);
   if (!isTouch) G.lockPointer(); else { try { document.documentElement.requestFullscreen?.()?.catch?.(() => {}); } catch (e) {} }
   try { screen.orientation?.lock?.('landscape')?.catch?.(() => {}); } catch (e) {}

@@ -22,8 +22,8 @@ A Classic-style schoolhouse. You start at the **south exit** and walk into a fou
 
 ## Lesson-B (the -B mod)
 A separate mode, **Lesson-B**, implements *Project LESSON-B* (`-B Clone Game Spec`). Pick it in the Style column; Story or Practice, four difficulties, a 6-digit seed and share codes.
-- **Teacher**: rhythm pursuit (wait, ruler slap, 0.45 s burst) with `avgSpeed = 4 + 1.6N + 1.2A` and `W = max(0.9, 2.6 - 0.2N - 0.1A)`; friendly at his desk until notebook 1, whose 3rd problem is impossible. Noise priority, ringing alarm, Static Tape disorientation, Fizz knockback, escape-phase alarm.
-- **Math**: spec tiers 1-7 (add, subtract, multiply, divide, two-step), integer answers, no duplicate answers, negatives from notebook 4. (The other styles stay addition/subtraction only.)
+- **Teacher**: rhythm pursuit (wait, ruler slap, 0.45 s burst) with `avgSpeed = 4 + 1.6N + 1.2A` and `W = max(0.9, 2.6 - 0.2N - 0.1A)`; friendly at his desk until you collect notebook 1, which wakes him (his first anger). Noise priority, ringing alarm, Static Tape disorientation, Fizz knockback, escape-phase alarm.
+- **No math questions** in this mode: notebooks are collected on touch. (The other styles keep the You Can Think Pad, addition and subtraction only.)
 - **Hallway characters**: Principal (warning then detention), Bully, Sweeper, Rope kid, Hug-bot, Crafter, with the spec's states, activation notebooks, active cap and 15 s mercy.
 - **Items**: Zest Bar, Brace Lock, Master Keys, Fizz Can, Quarter, Alarm Clock, Static Tape, Safety Scissors, Hinge Oil, Map; vending machines and tape decks.
 - Detention (15 s + 10 s per prior, cap 60), escape phase, results with rank S-D, share codes, 5 extra trophies, mood curve, danger vignette, timer, jump-scare intensity setting.

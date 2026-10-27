@@ -240,6 +240,7 @@ function useVending(v) {
 
 // ------------------------------------------------------------------ notebooks + You Can Think Pad
 function takeNotebook(n) {
+  if (S.style === 'lessonb') { n.taken = true; G.root.remove(n.mesh); collectNotebook(null, { nbNo: S.notebooks + 1, wrong: 0 }); return; }   // Lesson-B has no math questions
   if (S.style === 'null' || S.style === 'glitch') { n.taken = true; G.root.remove(n.mesh); G.nullNotebook(n); return; }
   openPad(n);
 }
@@ -257,9 +258,9 @@ let pad = null;
 const padMsg = (t) => { $('mathMsg').textContent = t; };
 function openPad(nb) {
   const nbNo = S.run === 'endless' ? S.endlessScore + 1 : S.notebooks + 1;
-  pad = { nb, i: 0, wrong: 0, right: 0, qs: S.style === 'lessonb' ? G.lb.problems(nbNo) : genProblems(nbNo, nbNo >= 2), input: '', lock: false, nbNo };
+  pad = { nb, i: 0, wrong: 0, right: 0, qs: genProblems(nbNo, nbNo >= 2), input: '', lock: false, nbNo };
   S.mode = 'pad'; document.exitPointerLock?.(); $('math').classList.remove('hidden'); setPrompt(null);
-  $('mathTitle').textContent = S.style === 'lessonb' ? `NOTEBOOK ${nbNo}` : S.run === 'endless' ? `YOU CAN THINK PAD · NOTEBOOK ${nbNo}` : `YOU CAN THINK PAD · NOTEBOOK ${nbNo} OF ${TOTAL_NB}`;
+  $('mathTitle').textContent = S.run === 'endless' ? `YOU CAN THINK PAD · NOTEBOOK ${nbNo}` : `YOU CAN THINK PAD · NOTEBOOK ${nbNo} OF ${TOTAL_NB}`;
   Snd.sfx.click(); showQ(true);
 }
 const spoken = (q) => q.replace('−', 'minus').replace('+', 'plus').replace('×', 'times').replace('÷', 'divided by').replace('=', '');
@@ -276,7 +277,7 @@ export function padInput(k) {
   if (k === '⌫') pad.input = pad.input.slice(0, -1);
   else if (k === 'OK') { submit(); return; }
   else if (k === '-') { if (!pad.input) pad.input = '-'; }
-  else if (pad.input.replace('-', '').length < (S.style === 'lessonb' ? 5 : 4)) pad.input += k;
+  else if (pad.input.replace('-', '').length < 4) pad.input += k;
   $('mathA').textContent = pad.input || ' ';
 }
 G.padInput = padInput;
@@ -287,10 +288,9 @@ function submit() {
   if (ok) { pad.right++; S.correct++; Snd.sfx.correct(); const m = pick(['Correct!', 'Great job!', 'Good!', 'Excellent!']); padMsg(m); Snd.speak(m, 0.7); }
   else {
     pad.wrong++; S.wrong++; Snd.sfx.wrong();
-    padMsg(q.impossible ? 'I GET ANGRIER FOR EVERY PROBLEM YOU GET WRONG!' : S.style === 'lessonb' ? 'Wrong!' : `Wrong! It was ${q.a}.`); Snd.speak(q.impossible ? 'I get angrier for every problem you get wrong!' : 'Oh no, that is wrong!', 0.25);
-    try { if (S.style !== 'lessonb') G.actors.onWrong(pad.i, q.impossible, pad); } catch (e) { console.error(e); }
+    padMsg(q.impossible ? 'I GET ANGRIER FOR EVERY PROBLEM YOU GET WRONG!' : `Wrong! It was ${q.a}.`); Snd.speak(q.impossible ? 'I get angrier for every problem you get wrong!' : 'Oh no, that is wrong!', 0.25);
+    try { G.actors.onWrong(pad.i, q.impossible, pad); } catch (e) { console.error(e); }
   }
-  try { if (S.style === 'lessonb') G.lb.onAnswer(ok, pad.i, q); } catch (e) { console.error(e); }
   const p = pad;
   setTimeout(() => {
     if (pad !== p) return;   // the pad was closed some other way (quit, restart)

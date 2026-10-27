@@ -95,7 +95,7 @@ export function initUI(h) {
     const d = L.decodeShare($('lbCode').value);
     if (!d) { hint('That share code is not valid.'); return; }
     M.lb.diff = d.diff; M.lb.seed = d.seed; M.run = d.mode === 'practice' ? 'practice' : 'story'; $('lbSeed').value = d.seed; renderMenu();
-    hint(`Loaded ${d.diff} seed ${d.seed}. The code's time was ${Math.floor(d.time / 60)}:${String(Math.floor(d.time % 60)).padStart(2, '0')} at ${Math.round(d.accuracy * 100)}% accuracy. Beat it!`);
+    hint(`Loaded ${d.diff} seed ${d.seed}. The code's time was ${Math.floor(d.time / 60)}:${String(Math.floor(d.time % 60)).padStart(2, '0')}. Beat it!`);
   };
   renderMenu(); hint(STYLE_INFO.classic);
 }
