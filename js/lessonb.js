@@ -9,7 +9,8 @@ import { CELL, cellCenter, toCell } from './world.js';
 import { Save, unlockAchievement } from './save.js';
 import * as Snd from './audio.js';
 
-const D = 0.8, V = 1.25;     // spec units -> engine units: distances x0.8 (tile 10u -> 8), speeds x1.25 (walk 10 u/s -> 12.5)
+const D = 0.8, V = 1.25;
+const VV = () => V * (run ? run.pace || 1 : 1);   // speed scale for every character: spec -> engine units, times the pace ramp     // spec units -> engine units: distances x0.8 (tile 10u -> 8), speeds x1.25 (walk 10 u/s -> 12.5)
 export let LB = null;        // merged data config (null until loaded)
 const FILES = ['teacher', 'tiers', 'presets', 'items', 'characters'];
 
@@ -204,7 +205,7 @@ function updateTeacher(dt) {
   run.spottedCooldown = Math.max(0, run.spottedCooldown - dt);
   T.A = L.angerDecay(T.A, dt, T.unseen, tp);
   const prm = L.teacherParams(S.notebooks, T.A, tp), mul = run.preset.speedMul;
-  const Wp = prm.W * escBonus * (run.diff === 'hard' || run.diff === 'nightmare' ? 0.95 : 1), avg = prm.avgSpeed * V * mul, burstDist = avg * Wp, burstSpeed = burstDist / tp.burstDuration * (T.sees ? 1 + tp.chaseBurstBonus : 1);
+  const Wp = prm.W * escBonus * (run.diff === 'hard' || run.diff === 'nightmare' ? 0.95 : 1) / (run.pace || 1), avg = prm.avgSpeed * VV() * mul, burstDist = avg * Wp, burstSpeed = burstDist / tp.burstDuration * (T.sees ? 1 + tp.chaseBurstBonus : 1);
   // target selection (spec 8.4): escape alarm > player in sight > ringing alarm > loud noise > known position
   let target = { x: P.x, z: P.z }, state = 'hunting';
   const ev = L.pickNoise(run.noise, T, 2, (e, p) => Math.hypot(e.x - p.x, e.z - p.z));
@@ -253,15 +254,15 @@ function updatePrincipal(dt) {
   pr.sprite.position.set(pr.x, 0, pr.z);
   if (S.detention > 0) return;
   if (run.escaped) {   // Principal retreats to his office during the escape phase
-    const o = centerOf('OFFICE'); if (near(pr, o) > 4) w.followPath(pr, o.x, o.z, cc.speed * V, dt, false); return;
+    const o = centerOf('OFFICE'); if (near(pr, o) > 4) w.followPath(pr, o.x, o.z, cc.speed * VV(), dt, false); return;
   }
   if (pr.stall > 0) return;
   const sees = w.los(pr.x, pr.z, P.x, P.z) && near(pr, P) < 90;
   if (pr.state === 'escort') {
-    w.followPath(pr, P.x, P.z, cc.chase * V, dt, false); if (sees) { const dx = P.x - pr.x, dz = P.z - pr.z, d = Math.hypot(dx, dz) || 1; pr.x += dx / d * cc.chase * V * dt * 0.5; pr.z += dz / d * cc.chase * V * dt * 0.5; w.resolve(pr, 1.5); }
+    w.followPath(pr, P.x, P.z, cc.chase * VV(), dt, false); if (sees) { const dx = P.x - pr.x, dz = P.z - pr.z, d = Math.hypot(dx, dz) || 1; pr.x += dx / d * cc.chase * VV() * dt * 0.5; pr.z += dz / d * cc.chase * VV() * dt * 0.5; w.resolve(pr, 1.5); }
     if (near(pr, P) < 4.8) startDetention(); return;
   }
-  const wp = pr.wps[pr.wi % pr.wps.length]; if (near(pr, wp) < 3) pr.wi++; w.followPath(pr, wp.x, wp.z, cc.speed * V, dt, false);
+  const wp = pr.wps[pr.wi % pr.wps.length]; if (near(pr, wp) < 3) pr.wi++; w.followPath(pr, wp.x, wp.z, cc.speed * VV(), dt, false);
   if (!sees || run.mercyDet > 0) { pr.runT = 0; return; }
   if (P.running && P.moving) { pr.runT += dt; if (pr.runT >= cc.runViolation) { pr.runT = -3; violation('run'); } } else pr.runT = Math.max(0, pr.runT - dt);
   const lounge = world().roomInfo.find((r) => r.id === 'F4'); if (lounge && inRoom(lounge.r, P)) { pr.loungeT += dt; if (pr.loungeT > 0.5) { pr.loungeT = -3; violation('lounge'); } } else pr.loungeT = Math.min(0, pr.loungeT) < 0 ? pr.loungeT + dt : 0;
@@ -282,7 +283,7 @@ function updateBullies(dt) {
       if (!b.x || b.t <= 0) { for (let i = 0; i < 30; i++) { const h = w.randHall(run.rng.chars); if (Math.hypot(h.x - P.x, h.z - P.z) > 60 * D) { b.x = h.x; b.z = h.z; break; } } b.t = rnd(...cc.relocate); b.sprite.visible = true; }
       if (b.stall <= 0 && run.mercyT <= 0 && near(b, P) < cc.lurkRange * D && w.los(b.x, b.z, P.x, P.z)) { b.state = 'approach'; }
     } else if (b.state === 'approach') {
-      if (near(b, P) > cc.approachTo * D) w.followPath(b, P.x, P.z, cc.speed * V * (run.hyper ? 1.25 : 1), dt, false); else { b.state = 'demand'; b.demandT = cc.demandWindow; Snd.sfx.giggle(); G.say('<b>Bully</b>: "Hand it over!"', 2000, 'Hand it over!'); }
+      if (near(b, P) > cc.approachTo * D) w.followPath(b, P.x, P.z, cc.speed * VV() * (run.hyper ? 1.25 : 1), dt, false); else { b.state = 'demand'; b.demandT = cc.demandWindow; Snd.sfx.giggle(); G.say('<b>Bully</b>: "Hand it over!"', 2000, 'Hand it over!'); }
     } else if (b.state === 'demand') {
       b.demandT -= dt;
       if (b.demandT <= 0) {   // take an item at random (unselected first)
@@ -292,7 +293,7 @@ function updateBullies(dt) {
       }
     } else if (b.state === 'block') { if (b.t <= 0) bullyLeave(b); }
     else if (b.state === 'leave') {
-      const h = b.goal || (b.goal = w.randHall(run.rng.chars)); w.followPath(b, h.x, h.z, cc.speed * V, dt, false); if (b.t <= 0 || near(b, h) < 3) { b.goal = null; b.state = 'lurk'; b.t = rnd(...cc.relocate); b.x = 0; b.sprite.visible = false; }
+      const h = b.goal || (b.goal = w.randHall(run.rng.chars)); w.followPath(b, h.x, h.z, cc.speed * VV(), dt, false); if (b.t <= 0 || near(b, h) < 3) { b.goal = null; b.state = 'lurk'; b.t = rnd(...cc.relocate); b.x = 0; b.sprite.visible = false; }
     }
   });
 }
@@ -315,7 +316,7 @@ function updateSweeper(dt) {
     s.t -= dt; s.sprite.position.x = s.x + Math.sin(S.time * 60) * 0.5;       // shake
     if (s.t <= 0) { s.state = 'sweep'; G.say('<b>Sweeper</b> is coming through!', 1800); }
   } else if (s.state === 'sweep') {
-    const sp = cc.speed * V * (run.escaped ? LB.teacher.escape.sweeperSpeedMul : 1) * (run.hyper ? 1 : 1), dx = s.route.b.x - s.x, dz = s.route.b.z - s.z, d = Math.hypot(dx, dz) || 1, st = Math.min(d, sp * dt), ux = dx / d, uz = dz / d;
+    const sp = cc.speed * VV() * (run.escaped ? LB.teacher.escape.sweeperSpeedMul : 1) * (run.hyper ? 1 : 1), dx = s.route.b.x - s.x, dz = s.route.b.z - s.z, d = Math.hypot(dx, dz) || 1, st = Math.min(d, sp * dt), ux = dx / d, uz = dz / d;
     s.x += ux * st; s.z += uz * st;
     if (!s.shoved && Math.abs(P.x - s.x) < 5 && Math.abs(P.z - s.z) < 5 && S.detention <= 0) { s.shoved = true; P.shoveX += ux * cc.shove * D * 3; P.shoveZ += uz * cc.shove * D * 3; run.stunT = cc.stun; run.hits++; Snd.sfx.boing(); G.haptic(50); run.mercyT = Math.max(run.mercyT, LB.characters.mercySeconds); }
     for (const p of G.pickups) if (Math.hypot(p.x - s.x, p.z - s.z) < 5) { p.x += ux * st; p.z += uz * st; p.sprite.position.x = p.x; p.sprite.position.z = p.z; }   // loose floor items get swept along
@@ -349,12 +350,12 @@ function updateRope(dt) {
   if (r.state === 'play') { pt.pos += pt.dir * pt.speed * dt; if (pt.pos > 1) { pt.pos = 1; pt.dir = -1; } else if (pt.pos < 0) { pt.pos = 0; pt.dir = 1; } $('ropeMark').style.left = `calc(${pt.pos * 100}% - 4px)`; if (S.mode !== 'playtime') pt.active = false; return; }
   if (r.stall > 0) return;
   const d = near(r, P), sees = d < cc.sight * D && w.los(r.x, r.z, P.x, P.z);
-  if (r.state === 'wander') { const wp = r.wps[r.wi % r.wps.length]; if (near(r, wp) < 3) r.wi++; w.followPath(r, wp.x, wp.z, cc.speed * V * k, dt, false); if (sees && run.mercyT <= 0 && S.detention <= 0 && S.mode === 'play') { r.state = 'invite'; r.t = cc.invite; if (d > cc.accept * D) { run.freezeT = Math.max(run.freezeT, cc.invite); } } }
+  if (r.state === 'wander') { const wp = r.wps[r.wi % r.wps.length]; if (near(r, wp) < 3) r.wi++; w.followPath(r, wp.x, wp.z, cc.speed * VV() * k, dt, false); if (sees && run.mercyT <= 0 && S.detention <= 0 && S.mode === 'play') { r.state = 'invite'; r.t = cc.invite; if (d > cc.accept * D) { run.freezeT = Math.max(run.freezeT, cc.invite); } } }
   else if (r.state === 'invite') {
-    w.followPath(r, P.x, P.z, cc.run * V * k, dt, false);
+    w.followPath(r, P.x, P.z, cc.run * VV() * k, dt, false);
     if (d < cc.accept * D && S.mode === 'play') { run.freezeT = 0; startRope(); } else if (r.t <= 0 && !sees) r.state = 'wander';
-  } else if (r.state === 'tantrum') { w.followPath(r, P.x, P.z, cc.run * V * 0.6, dt, false); r.nT = (r.nT || 0) - dt; if (r.nT <= 0) { r.nT = 1; noiseAt(r.x, r.z, 'tantrum'); Snd.sfx.giggle(); } if (r.t <= 0) { r.state = 'cooldown'; r.t = cc.cooldown; } }
-  else if (r.state === 'cooldown') { const wp = r.wps[r.wi % r.wps.length]; if (near(r, wp) < 3) r.wi++; w.followPath(r, wp.x, wp.z, cc.speed * V, dt, false); if (r.t <= 0) r.state = 'wander'; }
+  } else if (r.state === 'tantrum') { w.followPath(r, P.x, P.z, cc.run * VV() * 0.6, dt, false); r.nT = (r.nT || 0) - dt; if (r.nT <= 0) { r.nT = 1; noiseAt(r.x, r.z, 'tantrum'); Snd.sfx.giggle(); } if (r.t <= 0) { r.state = 'cooldown'; r.t = cc.cooldown; } }
+  else if (r.state === 'cooldown') { const wp = r.wps[r.wi % r.wps.length]; if (near(r, wp) < 3) r.wi++; w.followPath(r, wp.x, wp.z, cc.speed * VV(), dt, false); if (r.t <= 0) r.state = 'wander'; }
 }
 
 // ------------------------------------------------------------------ Hug-bot
@@ -366,7 +367,7 @@ function updateHug(dt) {
     if (ev && run.mercyT <= 0 && S.mode === 'play') { h.state = 'alert'; h.t = cc.alert; h.tx = ev.x; h.tz = ev.z; Snd.sfx.beep(0.6); Snd.sfx.beep(0.6); }
   } else if (h.state === 'alert') { if (h.t <= 0) { h.state = 'charge'; const dx = h.tx - h.x, dz = h.tz - h.z, d = Math.hypot(dx, dz) || 1; h.tx += dx / d * cc.overshoot * D; h.tz += dz / d * cc.overshoot * D; h.t = 4; } }
   else if (h.state === 'charge') {
-    const sp = cc.charge * V * (run.hyper ? 1.25 : 1), dx = h.tx - h.x, dz = h.tz - h.z, d = Math.hypot(dx, dz) || 1, st = Math.min(d, sp * dt);
+    const sp = cc.charge * VV() * (run.hyper ? 1.25 : 1), dx = h.tx - h.x, dz = h.tz - h.z, d = Math.hypot(dx, dz) || 1, st = Math.min(d, sp * dt);
     h.x += dx / d * st; h.z += dz / d * st; w.resolve(h, 1.5);
     if (near(h, P) < 3.6 && S.mode === 'play' && S.detention <= 0) { run.freezeT = cc.hug; S.stamina = 0; P.exhausted = true; run.hits++; Snd.sfx.boing(); G.say('<b>Hug-bot</b> hugs you! Stamina gone.', 2400); G.haptic(80); h.state = 'recover'; h.t = cc.recover; run.mercyT = LB.characters.mercySeconds; }
     else if (d <= st + 0.1 || h.t <= 0) { h.state = 'recover'; h.t = 2; }
@@ -386,7 +387,7 @@ function updateCrafter(dt) {
   }
   if (c.stall > 0) return;
   const seen = los && viewAngle(c.x, c.z) < 40 * Math.PI / 180;          // keep him in view and he never moves
-  if (!seen) { w.followPath(c, P.x, P.z, cc.speed * V, dt, false); c.sc = (c.sc || 0) - dt; if (c.sc <= 0) { c.sc = 0.5; Snd.sfx.snip(); } }
+  if (!seen) { w.followPath(c, P.x, P.z, cc.speed * VV(), dt, false); c.sc = (c.sc || 0) - dt; if (c.sc <= 0) { c.sc = 0.5; Snd.sfx.snip(); } }
   if (near(c, P) < cc.teleportAt * D && S.mode === 'play') {
     const e = ['JD', 'F4', 'F5'].map(centerOf).filter((r) => Math.hypot(r.x - P.x, r.z - P.z) > 40).sort(() => Math.random() - 0.5)[0] || centerOf('OFFICE');
     G.flash('#000', 1); P.x = e.x; P.z = e.z; P.vx = P.vz = 0; Snd.sfx.glitchy(); run.hits++; G.say('<b>Crafter</b> sent you somewhere else…', 2400);
@@ -404,7 +405,7 @@ function updateCustoms(dt) {
     const sight = (def.senses?.sight ?? 80) * D, hear = (def.senses?.hearing ?? 60) * D, d = near(c, P);
     const heard = run.noise.find((e) => Math.hypot(e.x - c.x, e.z - c.z) < Math.min(e.radius, hear));
     const sees = d < sight && w.los(c.x, c.z, P.x, P.z);
-    if (sees || (heard && S.mode === 'play')) w.followPath(c, sees ? P.x : heard.x, sees ? P.z : heard.z, (def.speed || 12) * V, dt, false);
+    if (sees || (heard && S.mode === 'play')) w.followPath(c, sees ? P.x : heard.x, sees ? P.z : heard.z, (def.speed || 12) * VV(), dt, false);
     if (d < 3.4 && c.cool <= 0 && S.mode === 'play') {
       c.cool = def.mercyCooldown || 15; run.hits++;
       const e = def.onPlayerContact; if (e === 'catch') G.caught('custom'); else if (e === 'stun') run.freezeT = 2; else if (e === 'drainStamina') S.stamina = 0;
@@ -506,6 +507,8 @@ function mood(dt) {
 }
 lb.update = (dt) => {
   if (!run || !LB) return; initEntities();
+  run.pace = L.paceMultiplier(S.notebooks, LB.teacher.pace); Snd.music.setTempo(1 + (run.pace - 1) * 0.6);
+  if (run.pace > (run.paceShown || 1) + 1e-9) { run.paceShown = run.pace; if (S.notebooks < run.nbTarget) { G.say(`<b>The school speeds up!</b> Everyone is ×${run.pace.toFixed(1)} faster.`, 3200); G.flash('#ffd24a', 0.25); } }
   if (S.mode === 'play' || S.mode === 'playtime') run.clock += dt;
   run.mercyT = run.mercyT >= 1e8 ? run.mercyT : Math.max(0, run.mercyT - dt); if (run.mercyT >= 1e8 && S.mode !== 'playtime') run.mercyT = LB.characters.mercySeconds;
   run.freezeT = Math.max(0, run.freezeT - dt); run.stunT = Math.max(0, run.stunT - dt); S.frozenT = Math.max(run.freezeT, run.stunT);
