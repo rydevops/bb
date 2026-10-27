@@ -25,6 +25,8 @@ export function teacherParams(N, A, t) {
   const burstDist = avgSpeed * W;
   return { avgSpeed, W, burstDist, burstSpeed: burstDist / t.burstDuration };
 }
+// the whole school speeds up with every notebook from the third on (every character's movement and the Teacher's rhythm)
+export const paceMultiplier = (N, p) => (!p || N < p.fromNotebook ? 1 : 1 + p.perNotebook * (N - p.fromNotebook + 1));
 export const angerWrong = (A, per, t) => Math.min(t.angerCap, A + per);
 export const angerCorrect = (A, t) => Math.max(0, A + t.angerPerCorrect);             // angerPerCorrect is negative
 export const angerDecay = (A, dt, unseenFor, t) => (unseenFor > t.angerDecayAfterUnseen ? Math.max(0, A - t.angerDecayPerSecond * dt) : A);

@@ -12,7 +12,7 @@ import * as LBAI from './lbai.js';
 import { initGame, startRun, update, pause, resume, padInput, applyLook } from './game.js';
 import { initUI, M, renderMenu } from './ui.js';
 
-const BUILD = 'v12-layout';
+const BUILD = 'v13-pace';
 const canvas = $('view');
 let failures = 0, R = null, last = performance.now(), menuYaw = 0, lastOpts = null, wakeLock = null;
 const keys = {}, stick = { x: 0, y: 0, cx: 0, cy: 0 };

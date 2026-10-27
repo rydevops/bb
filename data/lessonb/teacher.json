@@ -5,6 +5,7 @@
   "minSpeed": 4.0, "maxSpeed": 24.0,
   "baseWait": 2.6, "waitPerNotebook": 0.2, "waitPerAnger": 0.1, "minWait": 0.9,
   "burstDuration": 0.45,
+  "pace": { "fromNotebook": 3, "perNotebook": 0.10, "_doc": "From the 3rd notebook on, every notebook makes ALL characters 10% faster (x1.1 at 3, up to x1.5 at 7); the Teacher's slap rhythm speeds up too." },
   "_pacing": "Anger still follows the spec formulas, but its effect is bounded so the ramp is smooth: avgSpeed and wait are limited to what anger = 2 would give at each notebook count. Remove these two arrays to get the raw spec behaviour.",
   "speedCapByNotebooks": [6.4, 8.0, 9.6, 11.2, 12.8, 14.4, 16.0, 17.6],
   "waitFloorByNotebooks": [2.4, 2.2, 2.0, 1.8, 1.6, 1.4, 1.2, 1.0],

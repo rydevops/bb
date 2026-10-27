@@ -68,6 +68,12 @@ const c = JSON.stringify([1, 2, 3, 4, 5, 6, 7].map((n) => L.generateNotebook(n, 
 assert.strictEqual(a, b); assert.notStrictEqual(a, c);
 console.log('ok  seeded determinism');
 
+// pace ramp: from the 3rd notebook every notebook speeds everyone up by 10%
+const pace = teacherTuned.pace;
+assert.strictEqual(L.paceMultiplier(0, pace), 1); assert.strictEqual(L.paceMultiplier(2, pace), 1);
+[[3, 1.1], [4, 1.2], [5, 1.3], [6, 1.4], [7, 1.5]].forEach(([n, m]) => assert.ok(Math.abs(L.paceMultiplier(n, pace) - m) < 1e-9, `pace at ${n}`));
+console.log('ok  pace ramp (x1.1 at notebook 3 ... x1.5 at 7)');
+
 // noise bus: highest priority in range, ties -> closest; out of range ignored
 const P = L.NOISE; const at = (x, kind) => ({ x, z: 0, ...P[kind] });
 assert.strictEqual(L.pickNoise([at(10, 'door'), at(20, 'vend')], { x: 0, z: 0 })?.priority, 3);
